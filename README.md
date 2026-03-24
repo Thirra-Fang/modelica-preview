@@ -1,7 +1,10 @@
 # Modelica Graphical Preview
+
 >AI真是强啊……想要一个东西就直接搓出来了。但是感觉要在vscode上复现openModelica的功能感觉还是有点路漫漫啊（）要是有大佬能做一下就好了#许愿
 
 在 Visual Studio Code 中打开 **Modelica（`.mo`）** 文件时，根据源码里的 **`annotation`**（如 `Placement`、`connect` 的 `Line`、类级别的 `Diagram` / `Icon` 等）渲染**示意图预览**，便于对照图形与文本。
+
+**扩展市场：** [Visual Studio Marketplace — Modelica Graphical Preview](https://marketplace.visualstudio.com/items?itemName=ThirraFang.modelica-preview)
 
 **仓库：** [github.com/Thirra-Fang/modelica-preview](https://github.com/Thirra-Fang/modelica-preview)
 
@@ -16,6 +19,22 @@
 
 - **VS Code** ≥ 1.85（与 `package.json` 中 `engines.vscode` 一致）
 
+## 安装
+
+### 从扩展市场安装（推荐）
+
+1. 在 VS Code 中打开 **扩展** 视图（`Ctrl+Shift+X` / `Cmd+Shift+X`）。
+2. 搜索 **Modelica Graphical Preview** 或 **modelica-preview**，选择发布者 **ThirraFang** 的条目，点击 **安装**。
+
+也可在浏览器中打开 [Marketplace 页面](https://marketplace.visualstudio.com/items?itemName=ThirraFang.modelica-preview)，点击 **Install** 跳转到 VS Code / VS Code 兼容编辑器完成安装。
+
+### 从 VSIX 安装
+
+若已打包得到 `modelica-preview-*.vsix`（例如自行构建或离线分发）：
+
+1. 在 VS Code 中选择 **扩展** → 右上角 `⋯` → **从 VSIX 安装…**
+2. 选中该 `.vsix` 文件并安装。
+
 ## 使用方式
 
 1. 在 VS Code 中打开任意 **`.mo`** 文件（或语言模式为 **Modelica** 的编辑器）。
@@ -29,15 +48,6 @@
 
 **提示：** 标题栏能摆下的按钮数量受窗口宽度、主题以及已安装扩展影响；若预览图标总进 **`⋯`**，可优先用状态栏或快捷键。也可在设置中搜索 **Editor Actions Position**（`workbench.editor.editorActionsLocation`）调整编辑器操作按钮的位置，观察哪种布局下更容易看到标题栏图标。
 
-## 从 VSIX 安装
-
-若已打包得到 `modelica-preview-*.vsix`：
-
-1. 在 VS Code 中选择 **扩展** → 右上角 `⋯` → **从 VSIX 安装…**
-2. 选中该 `.vsix` 文件并安装。
-
-（若将来发布到 Marketplace / Open VSX，也可从扩展市场直接安装。）
-
 ## 开发与打包
 
 ```bash
@@ -48,6 +58,8 @@ npm run package    # 生产构建并执行 vsce package，生成 .vsix
 ```
 
 使用 **F5**（“Run Extension”）可在 Extension Development Host 中调试本扩展。
+
+**技术文档：** 面向开发者与后续维护者，说明架构、数据流、模块职责及按功能定位源码的速查表，见 [docs/TECHNICAL.md](docs/TECHNICAL.md)。
 
 ## 示例
 
@@ -74,6 +86,8 @@ npm run package    # 生产构建并执行 vsce package，生成 .vsix
 
 When you open **Modelica (`.mo`)** files in Visual Studio Code, this extension renders a **diagram-style preview** from **`annotation`** data in the source—such as `Placement`, `Line` on `connect` statements, and class-level `Diagram` / `Icon` annotations—so you can compare the drawing with the text.
 
+**Marketplace:** [Visual Studio Marketplace — Modelica Graphical Preview](https://marketplace.visualstudio.com/items?itemName=ThirraFang.modelica-preview)
+
 **Repository:** [github.com/Thirra-Fang/modelica-preview](https://github.com/Thirra-Fang/modelica-preview)
 
 ## Features
@@ -86,6 +100,22 @@ When you open **Modelica (`.mo`)** files in Visual Studio Code, this extension r
 ## Requirements
 
 - **VS Code** ≥ 1.85 (same as `engines.vscode` in `package.json`)
+
+## Installation
+
+### From the Marketplace (recommended)
+
+1. Open the **Extensions** view in VS Code (`Ctrl+Shift+X` / `Cmd+Shift+X`).
+2. Search for **Modelica Graphical Preview** or **modelica-preview**, choose the listing published by **ThirraFang**, and click **Install**.
+
+You can also open the [Marketplace page](https://marketplace.visualstudio.com/items?itemName=ThirraFang.modelica-preview) in a browser and use **Install** to jump into VS Code or a compatible editor.
+
+### Install from VSIX
+
+If you have a `modelica-preview-*.vsix` file (e.g. from a local build or offline distribution):
+
+1. In VS Code: **Extensions** → `⋯` in the top-right → **Install from VSIX…**
+2. Select the `.vsix` file and install.
 
 ## Usage
 
@@ -100,15 +130,6 @@ The preview opens beside the editor by default; you can move or close it like a 
 
 **Tip:** How many actions fit in the title bar depends on window width, theme, and other extensions. If the preview icon keeps landing under **`⋯`**, prefer the status bar or shortcut. You can also search settings for **Editor Actions Position** (`workbench.editor.editorActionsLocation`) and try different placements to see which layout surfaces title-bar actions more often.
 
-## Install from VSIX
-
-If you have a `modelica-preview-*.vsix` package:
-
-1. In VS Code: **Extensions** → `⋯` in the top-right → **Install from VSIX…**
-2. Select the `.vsix` file and install.
-
-(If the extension is published to the Marketplace or Open VSX, you can install it from there instead.)
-
 ## Development and packaging
 
 ```bash
@@ -119,6 +140,8 @@ npm run package    # production build + vsce package → .vsix
 ```
 
 Press **F5** (“Run Extension”) to debug in an Extension Development Host.
+
+**Technical documentation:** For developers and maintainers—architecture, data flow, module responsibilities, and a feature-to-file lookup—see [docs/TECHNICAL.md](docs/TECHNICAL.md).
 
 ## Examples
 

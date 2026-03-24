@@ -3,7 +3,16 @@
   "displayName": "Modelica Graphical Preview",
   "description": "Graphical diagram preview for Modelica .mo files",
   "version": "0.1.0",
+  "license": "MIT",
   "publisher": "modelica-preview",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Thirra-Fang/modelica-preview.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Thirra-Fang/modelica-preview/issues"
+  },
+  "homepage": "https://github.com/Thirra-Fang/modelica-preview",
   "engines": {
     "vscode": "^1.85.0"
   },

@@ -1,4 +1,5 @@
 # Modelica Graphical Preview
+>AI真是强啊……想要一个东西就直接搓出来了。但是感觉要在vscode上复现openModelica的功能感觉还是有点路漫漫啊（）要是有大佬能做一下就好了#许愿
 
 在 Visual Studio Code 中打开 **Modelica（`.mo`）** 文件时，根据源码里的 **`annotation`**（如 `Placement`、`connect` 的 `Line`、类级别的 `Diagram` / `Icon` 等）渲染**示意图预览**，便于对照图形与文本。
 
@@ -68,6 +69,8 @@ npm run package    # 生产构建并执行 vsce package，生成 .vsix
 ---
 
 # English
+
+>AI really is amazing… You just want something and it conjures it up straight away. But I reckon it’s still a long way off before we can replicate the openModelica functionality in VS Code () It’d be great if someone in the know could give it a go #wishlist
 
 When you open **Modelica (`.mo`)** files in Visual Studio Code, this extension renders a **diagram-style preview** from **`annotation`** data in the source—such as `Placement`, `Line` on `connect` statements, and class-level `Diagram` / `Icon` annotations—so you can compare the drawing with the text.
 

@@ -4,7 +4,7 @@
   "description": "Graphical diagram preview for Modelica .mo files",
   "version": "0.1.0",
   "license": "MIT",
-  "publisher": "modelica-preview",
+  "publisher": "ThirraFang",
   "repository": {
     "type": "git",
     "url": "https://github.com/Thirra-Fang/modelica-preview.git"
@@ -64,17 +64,14 @@
   "scripts": {
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
-    "package": "node esbuild.js --production && vsce package",
+    "package": "node esbuild.js --production && npx vsce package",
     "vscode:prepublish": "node esbuild.js --production"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.0.0",
     "esbuild": "^0.20.0",
     "typescript": "^5.3.0"
-  },
-  "dependencies": {
-    "tree-sitter-modelica": "^0.1.0",
-    "web-tree-sitter": "^0.22.6"
   }
 }

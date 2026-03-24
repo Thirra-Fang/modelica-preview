@@ -1,0 +1,66 @@
+{
+  "name": "modelica-preview",
+  "displayName": "Modelica Graphical Preview",
+  "description": "Graphical diagram preview for Modelica .mo files",
+  "version": "0.1.0",
+  "publisher": "modelica-preview",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:modelica",
+    "onCommand:modelica-preview.showPreview"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "modelica-preview.showPreview",
+        "title": "Modelica: Show Diagram Preview",
+        "icon": "$(preview)"
+      }
+    ],
+    "languages": [
+      {
+        "id": "modelica",
+        "aliases": [
+          "Modelica",
+          "modelica"
+        ],
+        "extensions": [
+          ".mo"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "modelica-preview.showPreview",
+          "when": "resourceExtname == .mo",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "node esbuild.js --production && vsce package",
+    "vscode:prepublish": "node esbuild.js --production"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "tree-sitter-modelica": "^0.1.0",
+    "web-tree-sitter": "^0.22.6"
+  }
+}

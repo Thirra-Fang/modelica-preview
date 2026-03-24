@@ -9,6 +9,26 @@ import { DiagramModel } from './model/diagramModel';
 let previewPanel: vscode.WebviewPanel | undefined;
 let currentDocumentUri: vscode.Uri | undefined;
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+let previewStatusBar: vscode.StatusBarItem | undefined;
+
+function isModelicaDocument(doc: vscode.TextDocument): boolean {
+  return doc.languageId === 'modelica' || doc.fileName.endsWith('.mo');
+}
+
+function syncPreviewStatusBar(context: vscode.ExtensionContext, editor: vscode.TextEditor | undefined): void {
+  if (!previewStatusBar) {
+    previewStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    previewStatusBar.command = 'modelica-preview.showPreview';
+    previewStatusBar.tooltip = 'Show Modelica diagram preview';
+    context.subscriptions.push(previewStatusBar);
+  }
+  if (editor && isModelicaDocument(editor.document)) {
+    previewStatusBar.text = '$(open-preview) Modelica Preview';
+    previewStatusBar.show();
+  } else {
+    previewStatusBar.hide();
+  }
+}
 
 export function activate(context: vscode.ExtensionContext): void {
   // Register the show-preview command
@@ -19,7 +39,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Auto-update when a .mo file is saved
   const onSave = vscode.workspace.onDidSaveTextDocument((doc) => {
-    if (doc.languageId === 'modelica' || doc.fileName.endsWith('.mo')) {
+    if (isModelicaDocument(doc)) {
       if (previewPanel && currentDocumentUri?.fsPath === doc.uri.fsPath) {
         scheduleUpdate(doc.uri, context);
       }
@@ -28,7 +48,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Auto-update as the user types (debounced 600ms)
   const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
-    if (event.document.languageId === 'modelica' || event.document.fileName.endsWith('.mo')) {
+    if (isModelicaDocument(event.document)) {
       if (previewPanel && currentDocumentUri?.fsPath === event.document.uri.fsPath) {
         scheduleUpdate(event.document.uri, context, event.document.getText());
       }
@@ -37,14 +57,17 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Track which editor is active; refresh preview if user switches to a .mo file
   const onActiveEditorChange = vscode.window.onDidChangeActiveTextEditor((editor) => {
+    syncPreviewStatusBar(context, editor);
     if (!editor) return;
-    if (editor.document.languageId === 'modelica' || editor.document.fileName.endsWith('.mo')) {
+    if (isModelicaDocument(editor.document)) {
       if (previewPanel) {
         currentDocumentUri = editor.document.uri;
         scheduleUpdate(editor.document.uri, context, editor.document.getText());
       }
     }
   });
+
+  syncPreviewStatusBar(context, vscode.window.activeTextEditor);
 
   context.subscriptions.push(showPreviewCmd, onSave, onChange, onActiveEditorChange);
 }

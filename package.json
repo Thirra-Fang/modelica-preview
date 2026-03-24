@@ -20,17 +20,14 @@
     "Visualization",
     "Programming Languages"
   ],
-  "activationEvents": [
-    "onLanguage:modelica",
-    "onCommand:modelica-preview.showPreview"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "modelica-preview.showPreview",
-        "title": "Modelica: Show Diagram Preview",
-        "icon": "$(preview)"
+        "title": "Show Diagram Preview",
+        "category": "Modelica",
+        "icon": "$(open-preview)"
       }
     ],
     "languages": [
@@ -50,11 +47,19 @@
       "editor/title": [
         {
           "command": "modelica-preview.showPreview",
-          "when": "resourceExtname == .mo",
-          "group": "navigation"
+          "when": "editorLangId == modelica || resourceExtname == .mo",
+          "group": "navigation@1"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "modelica-preview.showPreview",
+        "key": "ctrl+alt+m",
+        "mac": "cmd+alt+m",
+        "when": "editorTextFocus && (editorLangId == modelica || resourceExtname == .mo)"
+      }
+    ]
   },
   "scripts": {
     "compile": "node esbuild.js",

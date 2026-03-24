@@ -17,12 +17,16 @@
 
 ## 使用方式
 
-1. 在 VS Code 中打开任意 **`.mo`** 文件。
+1. 在 VS Code 中打开任意 **`.mo`** 文件（或语言模式为 **Modelica** 的编辑器）。
 2. 任选一种方式打开预览：
-   - 点击编辑器标题栏右侧的 **预览** 图标（仅当当前文件为 `.mo` 时显示）；
+   - 点击编辑器标题栏右侧的 **打开预览** 图标（与内置 Markdown 预览同类图标；空间不足时可能被收进 **`⋯`** 溢出菜单）；
+   - 或当 `.mo` / Modelica 为当前活动编辑器时，点击窗口底部状态栏右侧的 **`Modelica Preview`**（带预览图标，一般始终可见）；
+   - 或使用快捷键：**`Ctrl+Alt+M`**（Windows / Linux）或 **`Cmd+Alt+M`**（macOS），需在编辑器内聚焦且当前为 `.mo` / Modelica；
    - 或打开命令面板（`Ctrl+Shift+P` / `Cmd+Shift+P`），执行 **`Modelica: Show Diagram Preview`**。
 
 预览默认在侧边栏打开；可像普通编辑器标签一样移动或关闭。
+
+**提示：** 标题栏能摆下的按钮数量受窗口宽度、主题以及已安装扩展影响；若预览图标总进 **`⋯`**，可优先用状态栏或快捷键。也可在设置中搜索 **Editor Actions Position**（`workbench.editor.editorActionsLocation`）调整编辑器操作按钮的位置，观察哪种布局下更容易看到标题栏图标。
 
 ## 从 VSIX 安装
 
@@ -82,12 +86,16 @@ When you open **Modelica (`.mo`)** files in Visual Studio Code, this extension r
 
 ## Usage
 
-1. Open any **`.mo`** file in VS Code.
-2. Open the preview in either way:
-   - Click the **preview** icon in the editor title bar (shown only for `.mo` files); or
+1. Open any **`.mo`** file in VS Code (or an editor whose language mode is **Modelica**).
+2. Open the preview in any of these ways:
+   - Click the **Open Preview** icon on the right side of the editor title bar (same family of icon as the built-in Markdown preview; when space is tight it may move into the **`⋯`** overflow menu);
+   - When a `.mo` / Modelica file is the active editor, click **`Modelica Preview`** on the right side of the status bar (with a preview icon—usually always visible);
+   - Use the keyboard shortcut: **`Ctrl+Alt+M`** (Windows / Linux) or **`Cmd+Alt+M`** (macOS), while focus is in the editor and the file is `.mo` / Modelica;
    - Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run **`Modelica: Show Diagram Preview`**.
 
 The preview opens beside the editor by default; you can move or close it like a normal tab.
+
+**Tip:** How many actions fit in the title bar depends on window width, theme, and other extensions. If the preview icon keeps landing under **`⋯`**, prefer the status bar or shortcut. You can also search settings for **Editor Actions Position** (`workbench.editor.editorActionsLocation`) and try different placements to see which layout surfaces title-bar actions more often.
 
 ## Install from VSIX
 

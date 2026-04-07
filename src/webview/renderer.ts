@@ -91,10 +91,14 @@ function localToAbsolute(p: Point, origin: Point, rotDeg: number): Point {
 }
 
 /**
- * Compute the actual bounding box of all components and connection points,
- * in Modelica diagram coordinates. Used to auto-fit the viewbox.
+ * Compute the actual bounding box for the active layer.
+ * Diagram mode includes component/connect bounds; Icon mode only uses icon graphics.
  */
-function computeActualBounds(m: DiagramModel): { x1: number; y1: number; x2: number; y2: number } | null {
+function computeActualBounds(
+  m: DiagramModel,
+  layer: LayerAnnotation,
+  includeComponentsAndConnections: boolean
+): { x1: number; y1: number; x2: number; y2: number } | null {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
   const expand = (x: number, y: number) => {
@@ -102,24 +106,26 @@ function computeActualBounds(m: DiagramModel): { x1: number; y1: number; x2: num
     if (y < minY) minY = y; if (y > maxY) maxY = y;
   };
 
-  for (const comp of m.components) {
-    const { transformation: t } = comp;
-    const [[ex1, ey1], [ex2, ey2]] = t.extent;
-    const corners: Point[] = [[ex1, ey1], [ex2, ey1], [ex2, ey2], [ex1, ey2]];
-    for (const c of corners) {
-      const [ax, ay] = localToAbsolute(c, t.origin, t.rotation);
-      expand(ax, ay);
+  if (includeComponentsAndConnections) {
+    for (const comp of m.components) {
+      const { transformation: t } = comp;
+      const [[ex1, ey1], [ex2, ey2]] = t.extent;
+      const corners: Point[] = [[ex1, ey1], [ex2, ey1], [ex2, ey2], [ex1, ey2]];
+      for (const c of corners) {
+        const [ax, ay] = localToAbsolute(c, t.origin, t.rotation);
+        expand(ax, ay);
+      }
+    }
+
+    for (const conn of m.connections) {
+      for (const p of conn.line.points) {
+        const [ax, ay] = localToAbsolute(p, conn.line.origin, conn.line.rotation);
+        expand(ax, ay);
+      }
     }
   }
 
-  for (const conn of m.connections) {
-    for (const p of conn.line.points) {
-      const [ax, ay] = localToAbsolute(p, conn.line.origin, conn.line.rotation);
-      expand(ax, ay);
-    }
-  }
-
-  for (const g of m.diagram.graphics) {
+  for (const g of layer.graphics) {
     if (g.type === 'Line' || g.type === 'Polygon') {
       for (const p of g.points) {
         const [ax, ay] = localToAbsolute(p, g.origin, g.rotation);
@@ -713,13 +719,14 @@ function render(m: DiagramModel): void {
   const defs = el('defs', {});
   svgEl.appendChild(defs);
 
+  const isIconLayer = currentLayer === 'icon' && !!m.icon;
   // Use icon layer if active and available
   const layer: LayerAnnotation = (currentLayer === 'icon' && m.icon) ? m.icon : m.diagram;
   const declaredVb = makeViewBox(layer.coordinateSystem);
 
   // Auto-expand viewbox to encompass all components and connections that may lie
   // outside the declared coordinateSystem extent (common in real Modelica files).
-  const bounds = computeActualBounds(m);
+  const bounds = computeActualBounds(m, layer, !isIconLayer);
   let vb: ViewBox;
   if (bounds) {
     const padX = Math.max((bounds.x2 - bounds.x1) * 0.08, 5);
@@ -749,21 +756,23 @@ function render(m: DiagramModel): void {
   }
   root.appendChild(diagramLayer);
 
-  // ── Components ──
-  const componentLayer = group({ class: 'mo-component-layer' });
-  for (const comp of m.components) {
-    if (comp.visible !== false) {
-      componentLayer.appendChild(renderComponent(comp, vb, svgW, svgH, defs));
+  if (!isIconLayer) {
+    // ── Components ──
+    const componentLayer = group({ class: 'mo-component-layer' });
+    for (const comp of m.components) {
+      if (comp.visible !== false) {
+        componentLayer.appendChild(renderComponent(comp, vb, svgW, svgH, defs));
+      }
     }
-  }
-  root.appendChild(componentLayer);
+    root.appendChild(componentLayer);
 
-  // ── Connections ──
-  const connectionLayer = group({ class: 'mo-connection-layer' });
-  for (const conn of m.connections) {
-    connectionLayer.appendChild(renderConnection(conn, vb, svgW, svgH, defs));
+    // ── Connections ──
+    const connectionLayer = group({ class: 'mo-connection-layer' });
+    for (const conn of m.connections) {
+      connectionLayer.appendChild(renderConnection(conn, vb, svgW, svgH, defs));
+    }
+    root.appendChild(connectionLayer);
   }
-  root.appendChild(connectionLayer);
 
   // Title
   const title = el('text', {

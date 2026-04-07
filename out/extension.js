@@ -1,6 +1,790 @@
-"use strict";var X=Object.create;var T=Object.defineProperty;var ee=Object.getOwnPropertyDescriptor;var ne=Object.getOwnPropertyNames;var te=Object.getPrototypeOf,oe=Object.prototype.hasOwnProperty;var ie=(e,n)=>{for(var t in n)T(e,t,{get:n[t],enumerable:!0})},Z=(e,n,t,o)=>{if(n&&typeof n=="object"||typeof n=="function")for(let r of ne(n))!oe.call(e,r)&&r!==t&&T(e,r,{get:()=>n[r],enumerable:!(o=ee(n,r))||o.enumerable});return e};var B=(e,n,t)=>(t=e!=null?X(te(e)):{},Z(n||!e||!e.__esModule?T(t,"default",{value:e,enumerable:!0}):t,e)),re=e=>Z(T({},"__esModule",{value:!0}),e);var De={};ie(De,{activate:()=>Pe,deactivate:()=>ke});module.exports=re(De);var s=B(require("vscode")),G=B(require("path")),W=B(require("fs"));var M={extent:[[-100,-100],[100,100]],preserveAspectRatio:!0};function f(e){for(;e.pos<e.src.length;){let n=e.src[e.pos];if(n===" "||n==="	"||n==="\r"||n===`
-`)e.pos++;else if(e.src[e.pos]==="/"&&e.src[e.pos+1]==="/")for(;e.pos<e.src.length&&e.src[e.pos]!==`
-`;)e.pos++;else if(e.src[e.pos]==="/"&&e.src[e.pos+1]==="*"){e.pos+=2;let t=e.src.indexOf("*/",e.pos);e.pos=t===-1?e.src.length:t+2}else break}}function F(e){return/[a-zA-Z_]/.test(e)}function ae(e){return/[a-zA-Z0-9_]/.test(e)}function R(e){return e>="0"&&e<="9"}function z(e){let n="";for(;e.pos<e.src.length&&ae(e.src[e.pos]);)n+=e.src[e.pos++];return n}function le(e){let n=z(e);for(;e.pos<e.src.length&&e.src[e.pos]==="."&&e.pos+1<e.src.length&&F(e.src[e.pos+1]);)e.pos++,n+="."+z(e);return n}function ue(e){let n="";for(;e.pos<e.src.length&&R(e.src[e.pos]);)n+=e.src[e.pos++];if(e.pos<e.src.length&&e.src[e.pos]===".")for(n+=e.src[e.pos++];e.pos<e.src.length&&R(e.src[e.pos]);)n+=e.src[e.pos++];if(e.pos<e.src.length&&(e.src[e.pos]==="e"||e.src[e.pos]==="E"))for(n+=e.src[e.pos++],e.pos<e.src.length&&(e.src[e.pos]==="+"||e.src[e.pos]==="-")&&(n+=e.src[e.pos++]);e.pos<e.src.length&&R(e.src[e.pos]);)n+=e.src[e.pos++];return parseFloat(n)}function pe(e){e.pos++;let n="";for(;e.pos<e.src.length&&e.src[e.pos]!=='"';)if(e.src[e.pos]==="\\"&&e.pos+1<e.src.length){e.pos++;let t=e.src[e.pos++];switch(t){case"n":n+=`
-`;break;case"t":n+="	";break;case'"':n+='"';break;case"\\":n+="\\";break;default:n+=t}}else n+=e.src[e.pos++];return e.pos<e.src.length&&e.pos++,n}function v(e){if(f(e),e.pos>=e.src.length)return{kind:"ident",value:""};let n=e.src[e.pos];if(n==="-"){e.pos++;let t=v(e);return t.kind==="number"?{kind:"number",value:-t.value}:{kind:"number",value:0}}if(n==="{"){e.pos++;let t=[];for(f(e);e.pos<e.src.length&&e.src[e.pos]!=="}";)t.push(v(e)),f(e),e.pos<e.src.length&&e.src[e.pos]===","&&e.pos++,f(e);return e.pos<e.src.length&&e.pos++,{kind:"array",items:t}}if(n==='"')return{kind:"string",value:pe(e)};if(R(n))return{kind:"number",value:ue(e)};if(F(n)){let t=le(e);if(f(e),e.pos<e.src.length&&e.src[e.pos]==="("){e.pos++;let o=$(e,")");return e.pos<e.src.length&&e.src[e.pos]===")"&&e.pos++,{kind:"record",name:t,args:o}}return{kind:"ident",value:t}}return e.pos++,{kind:"ident",value:""}}function $(e,n){let t={},o=0;for(f(e);e.pos<e.src.length&&e.src[e.pos]!==n&&(f(e),!(e.pos>=e.src.length||e.src[e.pos]===n));){let r=e.pos;if(F(e.src[e.pos])){let i=z(e);if(f(e),e.pos<e.src.length&&e.src[e.pos]==="=")e.pos++,f(e),t[i]=v(e);else if(e.pos<e.src.length&&e.src[e.pos]==="("){e.pos=r;let a=v(e);if(a.kind==="record"){let p=a.name.includes(".")?a.name.split(".").pop():a.name;t[p]=a}else t[String(o++)]=a}else{e.pos=r;let a=v(e);t[String(o++)]=a}}else{let i=v(e);if(i.kind==="record"){let a=i.name.includes(".")?i.name.split(".").pop():i.name;t[a]=i}else t[String(o++)]=i}f(e),e.pos<e.src.length&&e.src[e.pos]===","&&e.pos++,f(e)}return t}function I(e){return $({src:e,pos:0},"\0")}function u(e,n=0){return e&&e.kind==="number"?e.value:n}function S(e,n=""){return e&&(e.kind==="string"||e.kind==="ident")?e.value:n}function E(e,n=!0){return e&&e.kind==="ident"?e.value!=="false":n}function h(e,n=""){let t=S(e,n),o=t.lastIndexOf(".");return o>=0?t.slice(o+1):t||n}function b(e){return e?e.kind==="array"&&e.items.length>=2?[u(e.items[0]),u(e.items[1])]:[0,0]:[0,0]}function A(e){return e?e.kind==="array"&&e.items.length>=2?[b(e.items[0]),b(e.items[1])]:[[-100,-100],[100,100]]:[[-100,-100],[100,100]]}function P(e){return e?e.kind==="array"&&e.items.length>=3?[u(e.items[0]),u(e.items[1]),u(e.items[2])]:[0,0,0]:[0,0,0]}function H(e){return e?e.kind==="array"&&e.items.length>=2?[h(e.items[0],"None"),h(e.items[1],"None")]:["None","None"]:["None","None"]}function k(e){return!e||e.kind!=="record"?{}:e.args}function U(e,n){let t=1,o=n+1;for(;o<e.length&&t>0;){let r=e[o];if(r==='"'){for(o++;o<e.length&&e[o]!=='"';)e[o]==="\\"&&o++,o++;o++;continue}if(e[o]==="/"&&e[o+1]==="/"){for(;o<e.length&&e[o]!==`
-`;)o++;continue}if(e[o]==="/"&&e[o+1]==="*"){o+=2;let i=e.indexOf("*/",o);o=i===-1?e.length:i+2;continue}if(r==="("?t++:r===")"&&t--,t>0)o++;else break}return o}function Y(e,n){let t=1;for(let o=0;o<n&&o<e.length;o++)e[o]===`
-`&&t++;return t}function de(e){let n=[],t=/\bannotation\s*\(/g,o;for(;(o=t.exec(e))!==null;){let r=o.index+o[0].length-1,i=U(e,r),a=e.slice(r+1,i),p=r;for(;p>0&&e[p-1]!==";"&&e[p-1]!=="{"&&e[p-1]!=="}";)p--;let x=e.slice(p,o.index).trim();n.push({content:a,openParen:r,statementPrefix:x,line:Y(e,o.index)}),t.lastIndex=i+1}return n}function ce(e){let n=[],t=/\bconnect\s*\(/g,o;for(;(o=t.exec(e))!==null;){let r=o.index+o[0].length-1,i=U(e,r),a=e.slice(r+1,i).trim(),p=0,x=-1;for(let c=0;c<a.length;c++)if(a[c]==="(")p++;else if(a[c]===")")p--;else if(a[c]===","&&p===0){x=c;break}if(x<0){t.lastIndex=i+1;continue}let g=a.slice(0,x).trim(),m=a.slice(x+1).trim(),d,L=e.slice(i+1,e.indexOf(";",i+1)),C=/\bannotation\s*\(/.exec(L);if(C){let c=i+1+C.index+C[0].length-1,Q=U(e,c);d=e.slice(c+1,Q)}n.push({from:g,to:m,annotationContent:d,line:Y(e,o.index)}),t.lastIndex=i+1}return n}function me(e){let t=/\b(model|class|block|connector|record|package)\s+([A-Za-z_][A-Za-z0-9_]*)/.exec(e);return t?t[2]:"Unknown"}function fe(){return{visible:!0,origin:[0,0],rotation:0}}function N(e){return{visible:E(e.visible,!0),origin:b(e.origin),rotation:u(e.rotation,0)}}function O(e){return{...N(e),lineColor:P(e.lineColor),fillColor:P(e.fillColor),pattern:h(e.pattern,"Solid")||"Solid",fillPattern:h(e.fillPattern,"None")||"None",lineThickness:u(e.lineThickness,.25)}}function q(e){let n=e.points,t=[];if(n?.kind==="array")for(let r of n.items)t.push(b(r));let o=H(e.arrow);return{...N(e),type:"Line",points:t,color:P(e.color),pattern:h(e.pattern,"Solid")||"Solid",thickness:u(e.thickness,.25),arrow:[o[0],o[1]],arrowSize:u(e.arrowSize,3),smooth:h(e.smooth,"None")||"None"}}function ge(e){return{...O(e),type:"Rectangle",extent:A(e.extent),radius:u(e.radius,0)}}function he(e){return{...O(e),type:"Ellipse",extent:A(e.extent),startAngle:u(e.startAngle,0),endAngle:u(e.endAngle,360)}}function xe(e){let n=e.points,t=[];if(n?.kind==="array")for(let o of n.items)t.push(b(o));return{...O(e),type:"Polygon",points:t,smooth:h(e.smooth,"None")||"None"}}function we(e){let n=e.textStyle,t=[];if(n?.kind==="array")for(let o of n.items){let r=h(o,"");(r==="Bold"||r==="Italic"||r==="UnderLine")&&t.push(r)}return{...N(e),type:"Text",extent:A(e.extent),textString:S(e.textString,""),fontSize:u(e.fontSize,0),textColor:P(e.textColor),horizontalAlignment:h(e.horizontalAlignment,"Center")||"Center",textStyle:t}}function be(e){return{...N(e),type:"Bitmap",extent:A(e.extent),fileName:S(e.fileName,""),imageSource:S(e.imageSource,"")}}function Ae(e,n){switch(e){case"Line":return q(n);case"Rectangle":return ge(n);case"Ellipse":return he(n);case"Polygon":return xe(n);case"Text":return we(n);case"Bitmap":return be(n);default:return null}}function ye(e){if(!e||e.kind!=="array")return[];let n=[];for(let t of e.items)if(t.kind==="record"){let o=Ae(t.name,t.args);o&&n.push(o)}return n}function ve(e){if(!e)return M;let n=k(e);return{extent:A(n.extent),preserveAspectRatio:E(n.preserveAspectRatio,!0)}}function j(e){return{coordinateSystem:ve(e.coordinateSystem),graphics:ye(e.graphics)}}function Ce(e){if(!e||e.kind!=="record")return{extent:[[-10,-10],[10,10]],rotation:0,origin:[0,0]};let n=e.args;return{extent:A(n.extent),rotation:u(n.rotation,0),origin:b(n.origin)}}function Se(e){let o=e.replace(/\s+/g," ").trim().replace(/\([^)]*\)\s*$/,"").trim().split(/\s+/);if(o.length<2)return null;let r=o[o.length-1],i=o[o.length-2];return!/^[A-Za-z_][A-Za-z0-9_]*$/.test(r)||!/^\.?[A-Za-z_][A-Za-z0-9_.]*$/.test(i)?null:{typeName:i,name:r}}function J(e,n){let t=me(e),o=[],r=[],i={coordinateSystem:M,graphics:[]},a,p=de(e);for(let g of p){let m=I(g.content);if(m.Diagram){let d=k(m.Diagram);i=j(d)}if(m.Icon){let d=k(m.Icon);a=j(d)}if(m.Placement){let d=k(m.Placement),L=Ce(d.transformation),C=E(d.visible,!0),c=Se(g.statementPrefix);c&&o.push({name:c.name,typeName:c.typeName,transformation:L,visible:C,sourceLine:g.line})}}let x=ce(e);for(let g of x){let m={...fe(),type:"Line",points:[],color:[0,0,0],pattern:"Solid",thickness:.25,arrow:["None","None"],arrowSize:3,smooth:"None"};if(g.annotationContent){let d=I(g.annotationContent);d.Line&&d.Line.kind==="record"&&(m=q(d.Line.args))}r.push({from:g.from,to:g.to,line:m})}return{className:t,filePath:n,diagram:i,icon:a,components:o,connections:r}}var l,y,_,w;function D(e){return e.languageId==="modelica"||e.fileName.endsWith(".mo")}function K(e,n){w||(w=s.window.createStatusBarItem(s.StatusBarAlignment.Right,100),w.command="modelica-preview.showPreview",w.tooltip="Show Modelica diagram preview",e.subscriptions.push(w)),n&&D(n.document)?(w.text="$(open-preview) Modelica Preview",w.show()):w.hide()}function Pe(e){let n=s.commands.registerCommand("modelica-preview.showPreview",()=>Te(e)),t=s.workspace.onDidSaveTextDocument(i=>{D(i)&&l&&y?.fsPath===i.uri.fsPath&&V(i.uri,e)}),o=s.workspace.onDidChangeTextDocument(i=>{D(i.document)&&l&&y?.fsPath===i.document.uri.fsPath&&V(i.document.uri,e,i.document.getText())}),r=s.window.onDidChangeActiveTextEditor(i=>{K(e,i),i&&D(i.document)&&l&&(y=i.document.uri,V(i.document.uri,e,i.document.getText()))});K(e,s.window.activeTextEditor),e.subscriptions.push(n,t,o,r)}function ke(){l?.dispose()}function Te(e){let n=s.window.activeTextEditor;if(!n){s.window.showWarningMessage("Open a Modelica (.mo) file first.");return}if(!n.document.fileName.endsWith(".mo")&&n.document.languageId!=="modelica"){s.window.showWarningMessage("Active file is not a Modelica (.mo) file.");return}y=n.document.uri,l?l.reveal(s.ViewColumn.Beside):(l=s.window.createWebviewPanel("modelicaPreview","Modelica Preview",s.ViewColumn.Beside,{enableScripts:!0,retainContextWhenHidden:!0,localResourceRoots:[s.Uri.file(G.join(e.extensionPath,"out"))]}),l.webview.html=Ne(l.webview,e),l.webview.onDidReceiveMessage(t=>{t.type==="navigate"&&y&&Ee(y,t.line??0)},void 0,e.subscriptions),l.onDidDispose(()=>{l=void 0,y=void 0},null,e.subscriptions)),V(n.document.uri,e,n.document.getText())}function V(e,n,t){_&&clearTimeout(_),_=setTimeout(()=>Re(e,t),300)}function Re(e,n){if(l){l.webview.postMessage({type:"loading"});try{let t=n??W.readFileSync(e.fsPath,"utf8"),o=J(t,e.fsPath);l.title=`Preview: ${o.className}`,l.webview.postMessage({type:"update",model:o})}catch(t){let o=t instanceof Error?t.message:String(t);l.webview.postMessage({type:"error",error:`Parse error: ${o}`})}}}async function Ee(e,n){let t=Math.max(0,n-1),o=await s.workspace.openTextDocument(e),r=await s.window.showTextDocument(o,s.ViewColumn.One),i=new s.Range(t,0,t,0);r.selection=new s.Selection(i.start,i.start),r.revealRange(i,s.TextEditorRevealType.InCenter)}function Ne(e,n){let t=e.asWebviewUri(s.Uri.file(G.join(n.extensionPath,"out","webview","renderer.js"))),o=G.join(n.extensionPath,"out","webview","index.html"),r=W.readFileSync(o,"utf8");return r=r.replace(/\{\{cspSource\}\}/g,e.cspSource),r=r.replace(/\{\{rendererUri\}\}/g,t.toString()),r}0&&(module.exports={activate,deactivate});
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/extension.ts
+var extension_exports = {};
+__export(extension_exports, {
+  activate: () => activate,
+  deactivate: () => deactivate
+});
+module.exports = __toCommonJS(extension_exports);
+var vscode = __toESM(require("vscode"));
+var path = __toESM(require("path"));
+var fs = __toESM(require("fs"));
+
+// src/model/diagramModel.ts
+var DEFAULT_COORDINATE_SYSTEM = {
+  extent: [[-100, -100], [100, 100]],
+  preserveAspectRatio: true
+};
+
+// src/parser/annotationParser.ts
+function skip(c) {
+  while (c.pos < c.src.length) {
+    const ch = c.src[c.pos];
+    if (ch === " " || ch === "	" || ch === "\r" || ch === "\n") {
+      c.pos++;
+    } else if (c.src[c.pos] === "/" && c.src[c.pos + 1] === "/") {
+      while (c.pos < c.src.length && c.src[c.pos] !== "\n")
+        c.pos++;
+    } else if (c.src[c.pos] === "/" && c.src[c.pos + 1] === "*") {
+      c.pos += 2;
+      const end = c.src.indexOf("*/", c.pos);
+      c.pos = end === -1 ? c.src.length : end + 2;
+    } else {
+      break;
+    }
+  }
+}
+function isAlpha(ch) {
+  return /[a-zA-Z_]/.test(ch);
+}
+function isAlphaNum(ch) {
+  return /[a-zA-Z0-9_]/.test(ch);
+}
+function isDigit(ch) {
+  return ch >= "0" && ch <= "9";
+}
+function readIdent(c) {
+  let s = "";
+  while (c.pos < c.src.length && isAlphaNum(c.src[c.pos])) {
+    s += c.src[c.pos++];
+  }
+  return s;
+}
+function readIdentPath(c) {
+  let path2 = readIdent(c);
+  while (c.pos < c.src.length && c.src[c.pos] === "." && c.pos + 1 < c.src.length && isAlpha(c.src[c.pos + 1])) {
+    c.pos++;
+    path2 += "." + readIdent(c);
+  }
+  return path2;
+}
+function readNumber(c) {
+  let s = "";
+  while (c.pos < c.src.length && isDigit(c.src[c.pos]))
+    s += c.src[c.pos++];
+  if (c.pos < c.src.length && c.src[c.pos] === ".") {
+    s += c.src[c.pos++];
+    while (c.pos < c.src.length && isDigit(c.src[c.pos]))
+      s += c.src[c.pos++];
+  }
+  if (c.pos < c.src.length && (c.src[c.pos] === "e" || c.src[c.pos] === "E")) {
+    s += c.src[c.pos++];
+    if (c.pos < c.src.length && (c.src[c.pos] === "+" || c.src[c.pos] === "-")) {
+      s += c.src[c.pos++];
+    }
+    while (c.pos < c.src.length && isDigit(c.src[c.pos]))
+      s += c.src[c.pos++];
+  }
+  return parseFloat(s);
+}
+function readString(c) {
+  c.pos++;
+  let s = "";
+  while (c.pos < c.src.length && c.src[c.pos] !== '"') {
+    if (c.src[c.pos] === "\\" && c.pos + 1 < c.src.length) {
+      c.pos++;
+      const esc = c.src[c.pos++];
+      switch (esc) {
+        case "n":
+          s += "\n";
+          break;
+        case "t":
+          s += "	";
+          break;
+        case '"':
+          s += '"';
+          break;
+        case "\\":
+          s += "\\";
+          break;
+        default:
+          s += esc;
+      }
+    } else {
+      s += c.src[c.pos++];
+    }
+  }
+  if (c.pos < c.src.length)
+    c.pos++;
+  return s;
+}
+function parseExpr(c) {
+  skip(c);
+  if (c.pos >= c.src.length)
+    return { kind: "ident", value: "" };
+  const ch = c.src[c.pos];
+  if (ch === "-") {
+    c.pos++;
+    const inner = parseExpr(c);
+    if (inner.kind === "number")
+      return { kind: "number", value: -inner.value };
+    return { kind: "number", value: 0 };
+  }
+  if (ch === "{") {
+    c.pos++;
+    const items = [];
+    skip(c);
+    while (c.pos < c.src.length && c.src[c.pos] !== "}") {
+      items.push(parseExpr(c));
+      skip(c);
+      if (c.pos < c.src.length && c.src[c.pos] === ",")
+        c.pos++;
+      skip(c);
+    }
+    if (c.pos < c.src.length)
+      c.pos++;
+    return { kind: "array", items };
+  }
+  if (ch === '"')
+    return { kind: "string", value: readString(c) };
+  if (isDigit(ch))
+    return { kind: "number", value: readNumber(c) };
+  if (isAlpha(ch)) {
+    const name = readIdentPath(c);
+    skip(c);
+    if (c.pos < c.src.length && c.src[c.pos] === "(") {
+      c.pos++;
+      const args = parseArgList(c, ")");
+      if (c.pos < c.src.length && c.src[c.pos] === ")")
+        c.pos++;
+      return { kind: "record", name, args };
+    }
+    return { kind: "ident", value: name };
+  }
+  c.pos++;
+  return { kind: "ident", value: "" };
+}
+function parseArgList(c, terminator) {
+  const args = {};
+  let idx = 0;
+  skip(c);
+  while (c.pos < c.src.length && c.src[c.pos] !== terminator) {
+    skip(c);
+    if (c.pos >= c.src.length || c.src[c.pos] === terminator)
+      break;
+    const savedPos = c.pos;
+    if (isAlpha(c.src[c.pos])) {
+      const name = readIdent(c);
+      skip(c);
+      if (c.pos < c.src.length && c.src[c.pos] === "=") {
+        c.pos++;
+        skip(c);
+        args[name] = parseExpr(c);
+      } else if (c.pos < c.src.length && c.src[c.pos] === "(") {
+        c.pos = savedPos;
+        const val = parseExpr(c);
+        if (val.kind === "record") {
+          const key = val.name.includes(".") ? val.name.split(".").pop() : val.name;
+          args[key] = val;
+        } else {
+          args[String(idx++)] = val;
+        }
+      } else {
+        c.pos = savedPos;
+        const val = parseExpr(c);
+        args[String(idx++)] = val;
+      }
+    } else {
+      const val = parseExpr(c);
+      if (val.kind === "record") {
+        const key = val.name.includes(".") ? val.name.split(".").pop() : val.name;
+        args[key] = val;
+      } else {
+        args[String(idx++)] = val;
+      }
+    }
+    skip(c);
+    if (c.pos < c.src.length && c.src[c.pos] === ",")
+      c.pos++;
+    skip(c);
+  }
+  return args;
+}
+function parseAnnotationContent(src) {
+  const c = { src, pos: 0 };
+  return parseArgList(c, "\0");
+}
+function getNum(v, def = 0) {
+  if (!v)
+    return def;
+  if (v.kind === "number")
+    return v.value;
+  return def;
+}
+function getStr(v, def = "") {
+  if (!v)
+    return def;
+  if (v.kind === "string")
+    return v.value;
+  if (v.kind === "ident")
+    return v.value;
+  return def;
+}
+function getBool(v, def = true) {
+  if (!v)
+    return def;
+  if (v.kind === "ident")
+    return v.value !== "false";
+  return def;
+}
+function getEnumSuffix(v, def = "") {
+  const s = getStr(v, def);
+  const dot = s.lastIndexOf(".");
+  return dot >= 0 ? s.slice(dot + 1) : s || def;
+}
+function getPoint(v) {
+  if (!v)
+    return [0, 0];
+  if (v.kind === "array" && v.items.length >= 2) {
+    return [getNum(v.items[0]), getNum(v.items[1])];
+  }
+  return [0, 0];
+}
+function getExtent(v) {
+  if (!v)
+    return [[-100, -100], [100, 100]];
+  if (v.kind === "array" && v.items.length >= 2) {
+    return [getPoint(v.items[0]), getPoint(v.items[1])];
+  }
+  return [[-100, -100], [100, 100]];
+}
+function getColor(v) {
+  if (!v)
+    return [0, 0, 0];
+  if (v.kind === "array" && v.items.length >= 3) {
+    return [getNum(v.items[0]), getNum(v.items[1]), getNum(v.items[2])];
+  }
+  return [0, 0, 0];
+}
+function getArrow(v) {
+  if (!v)
+    return ["None", "None"];
+  if (v.kind === "array" && v.items.length >= 2) {
+    return [getEnumSuffix(v.items[0], "None"), getEnumSuffix(v.items[1], "None")];
+  }
+  return ["None", "None"];
+}
+function getRecordArgs(v) {
+  if (!v || v.kind !== "record")
+    return {};
+  return v.args;
+}
+
+// src/parser/modelicaParser.ts
+function findBalancedClose(src, open) {
+  let depth = 1;
+  let i = open + 1;
+  while (i < src.length && depth > 0) {
+    const c = src[i];
+    if (c === '"') {
+      i++;
+      while (i < src.length && src[i] !== '"') {
+        if (src[i] === "\\")
+          i++;
+        i++;
+      }
+      i++;
+      continue;
+    }
+    if (src[i] === "/" && src[i + 1] === "/") {
+      while (i < src.length && src[i] !== "\n")
+        i++;
+      continue;
+    }
+    if (src[i] === "/" && src[i + 1] === "*") {
+      i += 2;
+      const end = src.indexOf("*/", i);
+      i = end === -1 ? src.length : end + 2;
+      continue;
+    }
+    if (c === "(")
+      depth++;
+    else if (c === ")")
+      depth--;
+    if (depth > 0)
+      i++;
+    else
+      break;
+  }
+  return i;
+}
+function lineAt(src, pos) {
+  let n = 1;
+  for (let i = 0; i < pos && i < src.length; i++) {
+    if (src[i] === "\n")
+      n++;
+  }
+  return n;
+}
+function findAnnotations(src) {
+  const results = [];
+  const re = /\bannotation\s*\(/g;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const openParen = m.index + m[0].length - 1;
+    const closePos = findBalancedClose(src, openParen);
+    const content = src.slice(openParen + 1, closePos);
+    let prefixStart = openParen;
+    while (prefixStart > 0 && src[prefixStart - 1] !== ";" && src[prefixStart - 1] !== "{" && src[prefixStart - 1] !== "}") {
+      prefixStart--;
+    }
+    const statementPrefix = src.slice(prefixStart, m.index).trim();
+    results.push({
+      content,
+      openParen,
+      statementPrefix,
+      line: lineAt(src, m.index)
+    });
+    re.lastIndex = closePos + 1;
+  }
+  return results;
+}
+function findConnects(src) {
+  const results = [];
+  const re = /\bconnect\s*\(/g;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const openParen = m.index + m[0].length - 1;
+    const closePos = findBalancedClose(src, openParen);
+    const inner = src.slice(openParen + 1, closePos).trim();
+    let depth = 0;
+    let splitAt = -1;
+    for (let i = 0; i < inner.length; i++) {
+      if (inner[i] === "(")
+        depth++;
+      else if (inner[i] === ")")
+        depth--;
+      else if (inner[i] === "," && depth === 0) {
+        splitAt = i;
+        break;
+      }
+    }
+    if (splitAt < 0) {
+      re.lastIndex = closePos + 1;
+      continue;
+    }
+    const from = inner.slice(0, splitAt).trim();
+    const to = inner.slice(splitAt + 1).trim();
+    let annotContent;
+    const after = src.slice(closePos + 1, src.indexOf(";", closePos + 1));
+    const annMatch = /\bannotation\s*\(/.exec(after);
+    if (annMatch) {
+      const annOpen = closePos + 1 + annMatch.index + annMatch[0].length - 1;
+      const annClose = findBalancedClose(src, annOpen);
+      annotContent = src.slice(annOpen + 1, annClose);
+    }
+    results.push({ from, to, annotationContent: annotContent, line: lineAt(src, m.index) });
+    re.lastIndex = closePos + 1;
+  }
+  return results;
+}
+function findClassName(src) {
+  const re = /\b(model|class|block|connector|record|package)\s+([A-Za-z_][A-Za-z0-9_]*)/;
+  const m = re.exec(src);
+  return m ? m[2] : "Unknown";
+}
+function makeDefaultGraphicBase() {
+  return { visible: true, origin: [0, 0], rotation: 0 };
+}
+function extractGraphicBase(args) {
+  return {
+    visible: getBool(args["visible"], true),
+    origin: getPoint(args["origin"]),
+    rotation: getNum(args["rotation"], 0)
+  };
+}
+function extractFilledShape(args) {
+  return {
+    ...extractGraphicBase(args),
+    lineColor: getColor(args["lineColor"]),
+    fillColor: getColor(args["fillColor"]),
+    pattern: getEnumSuffix(args["pattern"], "Solid") || "Solid",
+    fillPattern: getEnumSuffix(args["fillPattern"], "None") || "None",
+    lineThickness: getNum(args["lineThickness"], 0.25)
+  };
+}
+function extractLineGraphic(args) {
+  const pointsVal = args["points"];
+  const points = [];
+  if (pointsVal?.kind === "array") {
+    for (const item of pointsVal.items) {
+      points.push(getPoint(item));
+    }
+  }
+  const arrowVal = getArrow(args["arrow"]);
+  return {
+    ...extractGraphicBase(args),
+    type: "Line",
+    points,
+    color: getColor(args["color"]),
+    pattern: getEnumSuffix(args["pattern"], "Solid") || "Solid",
+    thickness: getNum(args["thickness"], 0.25),
+    arrow: [arrowVal[0], arrowVal[1]],
+    arrowSize: getNum(args["arrowSize"], 3),
+    smooth: getEnumSuffix(args["smooth"], "None") || "None"
+  };
+}
+function extractRectangleGraphic(args) {
+  return {
+    ...extractFilledShape(args),
+    type: "Rectangle",
+    extent: getExtent(args["extent"]),
+    radius: getNum(args["radius"], 0)
+  };
+}
+function extractEllipseGraphic(args) {
+  return {
+    ...extractFilledShape(args),
+    type: "Ellipse",
+    extent: getExtent(args["extent"]),
+    startAngle: getNum(args["startAngle"], 0),
+    endAngle: getNum(args["endAngle"], 360)
+  };
+}
+function extractPolygonGraphic(args) {
+  const pointsVal = args["points"];
+  const points = [];
+  if (pointsVal?.kind === "array") {
+    for (const item of pointsVal.items)
+      points.push(getPoint(item));
+  }
+  return {
+    ...extractFilledShape(args),
+    type: "Polygon",
+    points,
+    smooth: getEnumSuffix(args["smooth"], "None") || "None"
+  };
+}
+function extractTextGraphic(args) {
+  const stylesVal = args["textStyle"];
+  const textStyle = [];
+  if (stylesVal?.kind === "array") {
+    for (const item of stylesVal.items) {
+      const s = getEnumSuffix(item, "");
+      if (s === "Bold" || s === "Italic" || s === "UnderLine")
+        textStyle.push(s);
+    }
+  }
+  return {
+    ...extractGraphicBase(args),
+    type: "Text",
+    extent: getExtent(args["extent"]),
+    textString: getStr(args["textString"], ""),
+    fontSize: getNum(args["fontSize"], 0),
+    textColor: getColor(args["textColor"]),
+    horizontalAlignment: getEnumSuffix(args["horizontalAlignment"], "Center") || "Center",
+    textStyle
+  };
+}
+function extractBitmapGraphic(args) {
+  return {
+    ...extractGraphicBase(args),
+    type: "Bitmap",
+    extent: getExtent(args["extent"]),
+    fileName: getStr(args["fileName"], ""),
+    imageSource: getStr(args["imageSource"], "")
+  };
+}
+function extractGraphic(name, args) {
+  switch (name) {
+    case "Line":
+      return extractLineGraphic(args);
+    case "Rectangle":
+      return extractRectangleGraphic(args);
+    case "Ellipse":
+      return extractEllipseGraphic(args);
+    case "Polygon":
+      return extractPolygonGraphic(args);
+    case "Text":
+      return extractTextGraphic(args);
+    case "Bitmap":
+      return extractBitmapGraphic(args);
+    default:
+      return null;
+  }
+}
+function extractGraphicsList(v) {
+  if (!v || v.kind !== "array")
+    return [];
+  const graphics = [];
+  for (const item of v.items) {
+    if (item.kind === "record") {
+      const g = extractGraphic(item.name, item.args);
+      if (g)
+        graphics.push(g);
+    }
+  }
+  return graphics;
+}
+function extractCoordinateSystem(v) {
+  if (!v)
+    return DEFAULT_COORDINATE_SYSTEM;
+  const args = getRecordArgs(v);
+  return {
+    extent: getExtent(args["extent"]),
+    preserveAspectRatio: getBool(args["preserveAspectRatio"], true)
+  };
+}
+function extractLayerAnnotation(args) {
+  return {
+    coordinateSystem: extractCoordinateSystem(args["coordinateSystem"]),
+    graphics: extractGraphicsList(args["graphics"])
+  };
+}
+function extractTransformation(v) {
+  if (!v || v.kind !== "record") {
+    return { extent: [[-10, -10], [10, 10]], rotation: 0, origin: [0, 0] };
+  }
+  const args = v.args;
+  return {
+    extent: getExtent(args["extent"]),
+    rotation: getNum(args["rotation"], 0),
+    origin: getPoint(args["origin"])
+  };
+}
+function inferComponentFromPrefix(prefix) {
+  const clean = prefix.replace(/\s+/g, " ").trim();
+  const noMod = clean.replace(/\([^)]*\)\s*$/, "").trim();
+  const parts = noMod.split(/\s+/);
+  if (parts.length < 2)
+    return null;
+  const name = parts[parts.length - 1];
+  const typeName = parts[parts.length - 2];
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name))
+    return null;
+  if (!/^\.?[A-Za-z_][A-Za-z0-9_.]*$/.test(typeName))
+    return null;
+  return { typeName, name };
+}
+function parseModelicaFile(content, filePath) {
+  const className = findClassName(content);
+  const components = [];
+  const connections = [];
+  let diagram = {
+    coordinateSystem: DEFAULT_COORDINATE_SYSTEM,
+    graphics: []
+  };
+  let icon;
+  const annotations = findAnnotations(content);
+  for (const raw of annotations) {
+    const parsed = parseAnnotationContent(raw.content);
+    if (parsed["Diagram"]) {
+      const diagramArgs = getRecordArgs(parsed["Diagram"]);
+      diagram = extractLayerAnnotation(diagramArgs);
+    }
+    if (parsed["Icon"]) {
+      const iconArgs = getRecordArgs(parsed["Icon"]);
+      icon = extractLayerAnnotation(iconArgs);
+    }
+    if (parsed["Placement"]) {
+      const placementArgs = getRecordArgs(parsed["Placement"]);
+      const transformation = extractTransformation(placementArgs["transformation"]);
+      const visible = getBool(placementArgs["visible"], true);
+      const info = inferComponentFromPrefix(raw.statementPrefix);
+      if (info) {
+        components.push({
+          name: info.name,
+          typeName: info.typeName,
+          transformation,
+          visible,
+          sourceLine: raw.line
+        });
+      }
+    }
+  }
+  const connects = findConnects(content);
+  for (const raw of connects) {
+    let line = {
+      ...makeDefaultGraphicBase(),
+      type: "Line",
+      points: [],
+      color: [0, 0, 0],
+      pattern: "Solid",
+      thickness: 0.25,
+      arrow: ["None", "None"],
+      arrowSize: 3,
+      smooth: "None"
+    };
+    if (raw.annotationContent) {
+      const annArgs = parseAnnotationContent(raw.annotationContent);
+      if (annArgs["Line"] && annArgs["Line"].kind === "record") {
+        line = extractLineGraphic(annArgs["Line"].args);
+      }
+    }
+    connections.push({ from: raw.from, to: raw.to, line });
+  }
+  return { className, filePath, diagram, icon, components, connections };
+}
+
+// src/extension.ts
+var previewPanel;
+var currentDocumentUri;
+var debounceTimer;
+var previewStatusBar;
+function isModelicaDocument(doc) {
+  return doc.languageId === "modelica" || doc.fileName.endsWith(".mo");
+}
+function syncPreviewStatusBar(context, editor) {
+  if (!previewStatusBar) {
+    previewStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    previewStatusBar.command = "modelica-preview.showPreview";
+    previewStatusBar.tooltip = "Show Modelica diagram preview";
+    context.subscriptions.push(previewStatusBar);
+  }
+  if (editor && isModelicaDocument(editor.document)) {
+    previewStatusBar.text = "$(open-preview) Modelica Preview";
+    previewStatusBar.show();
+  } else {
+    previewStatusBar.hide();
+  }
+}
+function activate(context) {
+  const showPreviewCmd = vscode.commands.registerCommand(
+    "modelica-preview.showPreview",
+    () => showPreview(context)
+  );
+  const onSave = vscode.workspace.onDidSaveTextDocument((doc) => {
+    if (isModelicaDocument(doc)) {
+      if (previewPanel && currentDocumentUri?.fsPath === doc.uri.fsPath) {
+        scheduleUpdate(doc.uri, context);
+      }
+    }
+  });
+  const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
+    if (isModelicaDocument(event.document)) {
+      if (previewPanel && currentDocumentUri?.fsPath === event.document.uri.fsPath) {
+        scheduleUpdate(event.document.uri, context, event.document.getText());
+      }
+    }
+  });
+  const onActiveEditorChange = vscode.window.onDidChangeActiveTextEditor((editor) => {
+    syncPreviewStatusBar(context, editor);
+    if (!editor)
+      return;
+    if (isModelicaDocument(editor.document)) {
+      if (previewPanel) {
+        currentDocumentUri = editor.document.uri;
+        scheduleUpdate(editor.document.uri, context, editor.document.getText());
+      }
+    }
+  });
+  syncPreviewStatusBar(context, vscode.window.activeTextEditor);
+  context.subscriptions.push(showPreviewCmd, onSave, onChange, onActiveEditorChange);
+}
+function deactivate() {
+  previewPanel?.dispose();
+}
+function showPreview(context) {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    vscode.window.showWarningMessage("Open a Modelica (.mo) file first.");
+    return;
+  }
+  if (!editor.document.fileName.endsWith(".mo") && editor.document.languageId !== "modelica") {
+    vscode.window.showWarningMessage("Active file is not a Modelica (.mo) file.");
+    return;
+  }
+  currentDocumentUri = editor.document.uri;
+  if (previewPanel) {
+    previewPanel.reveal(vscode.ViewColumn.Beside);
+  } else {
+    previewPanel = vscode.window.createWebviewPanel(
+      "modelicaPreview",
+      "Modelica Preview",
+      vscode.ViewColumn.Beside,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        localResourceRoots: [
+          vscode.Uri.file(path.join(context.extensionPath, "out"))
+        ]
+      }
+    );
+    previewPanel.webview.html = buildWebviewHtml(previewPanel.webview, context);
+    previewPanel.webview.onDidReceiveMessage(
+      (msg) => {
+        if (msg.type === "navigate" && currentDocumentUri) {
+          navigateToComponent(currentDocumentUri, msg.line ?? 0);
+        }
+      },
+      void 0,
+      context.subscriptions
+    );
+    previewPanel.onDidDispose(() => {
+      previewPanel = void 0;
+      currentDocumentUri = void 0;
+    }, null, context.subscriptions);
+  }
+  scheduleUpdate(editor.document.uri, context, editor.document.getText());
+}
+function scheduleUpdate(uri, context, content) {
+  if (debounceTimer)
+    clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => updatePreview(uri, content), 300);
+}
+function updatePreview(uri, content) {
+  if (!previewPanel)
+    return;
+  previewPanel.webview.postMessage({ type: "loading" });
+  try {
+    const text = content ?? fs.readFileSync(uri.fsPath, "utf8");
+    const diagramModel = parseModelicaFile(text, uri.fsPath);
+    previewPanel.title = `Preview: ${diagramModel.className}`;
+    previewPanel.webview.postMessage({ type: "update", model: diagramModel });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    previewPanel.webview.postMessage({ type: "error", error: `Parse error: ${msg}` });
+  }
+}
+async function navigateToComponent(docUri, line) {
+  const lineIndex = Math.max(0, line - 1);
+  const doc = await vscode.workspace.openTextDocument(docUri);
+  const editor = await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+  const range = new vscode.Range(lineIndex, 0, lineIndex, 0);
+  editor.selection = new vscode.Selection(range.start, range.start);
+  editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+}
+function buildWebviewHtml(webview, context) {
+  const rendererUri = webview.asWebviewUri(
+    vscode.Uri.file(path.join(context.extensionPath, "out", "webview", "renderer.js"))
+  );
+  const htmlPath = path.join(context.extensionPath, "out", "webview", "index.html");
+  let html = fs.readFileSync(htmlPath, "utf8");
+  html = html.replace(/\{\{cspSource\}\}/g, webview.cspSource);
+  html = html.replace(/\{\{rendererUri\}\}/g, rendererUri.toString());
+  return html;
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  activate,
+  deactivate
+});
+//# sourceMappingURL=extension.js.map

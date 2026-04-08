@@ -11,6 +11,7 @@
 ## 功能
 
 - **图形预览**：解析组件 `Placement(transformation(...))`、`connect(...)` 上的 `Line(...)`，以及类注解中的 `Diagram` / `Icon` 等图形元素，在 WebView 中绘制。
+- **工作区模型 Icon 替换**：若组件类型在工作区内可解析到对应 `.mo` 模型，则在父模型预览中优先使用该模型的 `Icon` 图形替换组件占位框（同目录/同包最近优先）。
 - **实时刷新**：预览打开时，对当前 `.mo` 的编辑会在短暂防抖后自动更新；保存文件也会刷新。
 - **切换文件**：在保持预览面板打开的情况下，切换到另一个 `.mo` 编辑器会自动切换预览内容。
 - **跳转到源码**：在预览中**点击组件**，可跳转到该组件在 `.mo` 中的声明行。
@@ -68,6 +69,7 @@ npm run package    # 生产构建并执行 vsce package，生成 .vsix
 ## 已知限制
 
 - 预览基于对**当前文件**文本的解析，复杂语法、非标准写法或工具生成的代码可能无法完全识别。
+- 工作区引用解析目前仅覆盖**组件声明引用**（如 `B b1`），尚未覆盖 `extends` 合并与 `import`/别名解析。
 - 主要面向带有 **Modelica 图形注解** 的模型；不包含完整 Modelica 语义仿真，仅作**示意图**参考。
 
 ## 许可证
@@ -93,6 +95,7 @@ When you open **Modelica (`.mo`)** files in Visual Studio Code, this extension r
 ## Features
 
 - **Diagram preview**: Parses `Placement(transformation(...))`, `Line(...)` on `connect(...)`, and `Diagram` / `Icon` graphics in class annotations, and draws them in a WebView.
+- **Workspace model Icon substitution**: When a component type resolves to another `.mo` model in the workspace, the parent preview prefers that model's `Icon` graphics over the default placeholder box (nearest same-folder/package match first).
 - **Live updates**: While the preview is open, edits to the current `.mo` are refreshed after a short debounce; saving the file also refreshes.
 - **Switching files**: With the preview panel open, switching to another `.mo` editor updates the preview to match.
 - **Jump to source**: **Click a component** in the preview to go to its declaration line in the `.mo` file.
@@ -150,6 +153,7 @@ The **`examples/`** folder contains sample `.mo` files (e.g. simple circuits, gr
 ## Limitations
 
 - The preview is driven by parsing the **current file**; unusual syntax, generated code, or complex constructs may not be fully recognized.
+- Workspace reference resolution currently covers **component declarations only** (e.g. `B b1`), and does not yet include `extends`-merged graphics or `import` alias resolution.
 - The focus is **Modelica graphical annotations**; there is no full semantic simulation—only a **diagram** for reference.
 
 ## License

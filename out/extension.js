@@ -34,9 +34,9 @@ __export(extension_exports, {
   deactivate: () => deactivate
 });
 module.exports = __toCommonJS(extension_exports);
-var vscode = __toESM(require("vscode"));
-var path = __toESM(require("path"));
-var fs = __toESM(require("fs"));
+var vscode2 = __toESM(require("vscode"));
+var path2 = __toESM(require("path"));
+var fs2 = __toESM(require("fs"));
 
 // src/model/diagramModel.ts
 var DEFAULT_COORDINATE_SYSTEM = {
@@ -79,12 +79,12 @@ function readIdent(c) {
   return s;
 }
 function readIdentPath(c) {
-  let path2 = readIdent(c);
+  let path3 = readIdent(c);
   while (c.pos < c.src.length && c.src[c.pos] === "." && c.pos + 1 < c.src.length && isAlpha(c.src[c.pos + 1])) {
     c.pos++;
-    path2 += "." + readIdent(c);
+    path3 += "." + readIdent(c);
   }
-  return path2;
+  return path3;
 }
 function readNumber(c) {
   let s = "";
@@ -644,17 +644,200 @@ function parseModelicaFile(content, filePath) {
   return { className, filePath, diagram, icon, components, connections };
 }
 
+// src/workspace/modelResolver.ts
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
+var vscode = __toESM(require("vscode"));
+function normalizeTypeName(typeName) {
+  return typeName.replace(/^\./, "").trim();
+}
+function extractWithinPackage(content) {
+  const withinMatch = content.match(/\bwithin\s+([A-Za-z_][A-Za-z0-9_.]*)\s*;/);
+  return withinMatch?.[1];
+}
+function extractClasses(content) {
+  const withinPackage = extractWithinPackage(content);
+  const classRe = /\b(model|class|block|connector|record|package)\s+([A-Za-z_][A-Za-z0-9_]*)/g;
+  const out = [];
+  let m;
+  while ((m = classRe.exec(content)) !== null) {
+    const className = m[2];
+    const fullName = withinPackage ? `${withinPackage}.${className}` : className;
+    out.push({ className, fullName, packageName: withinPackage });
+  }
+  return out;
+}
+function commonPathPrefixLength(a, b) {
+  const ap = path.resolve(a).split(path.sep);
+  const bp = path.resolve(b).split(path.sep);
+  let i = 0;
+  while (i < ap.length && i < bp.length && ap[i].toLowerCase() === bp[i].toLowerCase()) {
+    i++;
+  }
+  return i;
+}
+var WorkspaceModelResolver = class {
+  constructor() {
+    this.parsedFileCache = /* @__PURE__ */ new Map();
+    this.iconCache = /* @__PURE__ */ new Map();
+  }
+  async enrichModelComponents(diagramModel, contextText) {
+    const entries = await this.getWorkspaceIndex();
+    if (entries.length === 0) {
+      return diagramModel;
+    }
+    const contextDir = path.dirname(diagramModel.filePath);
+    const contextPackage = extractWithinPackage(contextText);
+    const enrichedComponents = [];
+    for (const component of diagramModel.components) {
+      const resolution = this.resolveComponentType(component.typeName, contextDir, contextPackage, entries);
+      if (!resolution.filePath) {
+        enrichedComponents.push({
+          ...component,
+          resolutionState: resolution.state
+        });
+        continue;
+      }
+      const iconGraphics = this.getModelIconGraphics(resolution.filePath);
+      if (iconGraphics.length === 0) {
+        const parsed2 = this.getParsedFileModel(resolution.filePath);
+        enrichedComponents.push({
+          ...component,
+          resolvedTypePath: resolution.filePath,
+          resolvedIconCoordinateSystem: parsed2.icon?.coordinateSystem,
+          resolutionState: "unresolved"
+        });
+        continue;
+      }
+      const parsed = this.getParsedFileModel(resolution.filePath);
+      enrichedComponents.push({
+        ...component,
+        resolvedTypePath: resolution.filePath,
+        resolvedIconGraphics: iconGraphics,
+        resolvedIconCoordinateSystem: parsed.icon?.coordinateSystem,
+        resolutionState: "resolved"
+      });
+    }
+    return {
+      ...diagramModel,
+      components: enrichedComponents
+    };
+  }
+  resolveComponentType(typeName, contextDir, contextPackage, entries) {
+    const normalized = normalizeTypeName(typeName);
+    const shortName = normalized.split(".").pop() ?? normalized;
+    const candidates = entries.filter((entry) => {
+      if (entry.fullName && entry.fullName === normalized)
+        return true;
+      if (entry.className === normalized)
+        return true;
+      if (entry.className === shortName)
+        return true;
+      return false;
+    });
+    if (candidates.length === 0) {
+      return { state: "unresolved" };
+    }
+    const ranked = [...candidates].sort((a, b) => {
+      const aDir = path.dirname(a.filePath);
+      const bDir = path.dirname(b.filePath);
+      const aSameDir = aDir.toLowerCase() === contextDir.toLowerCase() ? 1 : 0;
+      const bSameDir = bDir.toLowerCase() === contextDir.toLowerCase() ? 1 : 0;
+      if (aSameDir !== bSameDir)
+        return bSameDir - aSameDir;
+      const aPackageMatch = a.packageName && contextPackage && a.packageName === contextPackage ? 1 : 0;
+      const bPackageMatch = b.packageName && contextPackage && b.packageName === contextPackage ? 1 : 0;
+      if (aPackageMatch !== bPackageMatch)
+        return bPackageMatch - aPackageMatch;
+      const aPrefix = commonPathPrefixLength(aDir, contextDir);
+      const bPrefix = commonPathPrefixLength(bDir, contextDir);
+      if (aPrefix !== bPrefix)
+        return bPrefix - aPrefix;
+      return a.filePath.localeCompare(b.filePath);
+    });
+    if (ranked.length > 1) {
+      const first = ranked[0];
+      const second = ranked[1];
+      const firstDir = path.dirname(first.filePath).toLowerCase();
+      const secondDir = path.dirname(second.filePath).toLowerCase();
+      const firstScore = commonPathPrefixLength(firstDir, contextDir.toLowerCase());
+      const secondScore = commonPathPrefixLength(secondDir, contextDir.toLowerCase());
+      if (firstScore === secondScore && firstDir !== contextDir.toLowerCase() && secondDir !== contextDir.toLowerCase()) {
+        return { state: "ambiguous" };
+      }
+    }
+    return { filePath: ranked[0].filePath, state: "resolved" };
+  }
+  getModelIconGraphics(filePath) {
+    try {
+      const stat = fs.statSync(filePath);
+      const cached = this.iconCache.get(filePath);
+      if (cached && cached.mtimeMs === stat.mtimeMs) {
+        return cached.graphics;
+      }
+      const parsed = this.getParsedFileModel(filePath);
+      const graphics = parsed.icon?.graphics ?? [];
+      this.iconCache.set(filePath, { mtimeMs: stat.mtimeMs, graphics });
+      return graphics;
+    } catch {
+      return [];
+    }
+  }
+  getParsedFileModel(filePath) {
+    const stat = fs.statSync(filePath);
+    const cached = this.parsedFileCache.get(filePath);
+    if (cached && cached.mtimeMs === stat.mtimeMs) {
+      return cached.model;
+    }
+    const content = fs.readFileSync(filePath, "utf8");
+    const model = parseModelicaFile(content, filePath);
+    this.parsedFileCache.set(filePath, { mtimeMs: stat.mtimeMs, model });
+    return model;
+  }
+  async getWorkspaceIndex() {
+    const folders = vscode.workspace.workspaceFolders ?? [];
+    if (folders.length === 0) {
+      return [];
+    }
+    const key = folders.map((f) => f.uri.fsPath).sort().join("|");
+    if (this.indexCache?.key === key) {
+      return this.indexCache.entries;
+    }
+    const entries = [];
+    const files = await vscode.workspace.findFiles("**/*.mo", "**/{.git,node_modules,dist,out,build}/**");
+    for (const uri of files) {
+      const filePath = uri.fsPath;
+      try {
+        const content = fs.readFileSync(filePath, "utf8");
+        const classDefs = extractClasses(content);
+        for (const cls of classDefs) {
+          entries.push({
+            filePath,
+            className: cls.className,
+            fullName: cls.fullName,
+            packageName: cls.packageName
+          });
+        }
+      } catch {
+      }
+    }
+    this.indexCache = { key, entries };
+    return entries;
+  }
+};
+
 // src/extension.ts
 var previewPanel;
 var currentDocumentUri;
 var debounceTimer;
 var previewStatusBar;
+var workspaceModelResolver = new WorkspaceModelResolver();
 function isModelicaDocument(doc) {
   return doc.languageId === "modelica" || doc.fileName.endsWith(".mo");
 }
 function syncPreviewStatusBar(context, editor) {
   if (!previewStatusBar) {
-    previewStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    previewStatusBar = vscode2.window.createStatusBarItem(vscode2.StatusBarAlignment.Right, 100);
     previewStatusBar.command = "modelica-preview.showPreview";
     previewStatusBar.tooltip = "Show Modelica diagram preview";
     context.subscriptions.push(previewStatusBar);
@@ -667,25 +850,25 @@ function syncPreviewStatusBar(context, editor) {
   }
 }
 function activate(context) {
-  const showPreviewCmd = vscode.commands.registerCommand(
+  const showPreviewCmd = vscode2.commands.registerCommand(
     "modelica-preview.showPreview",
     () => showPreview(context)
   );
-  const onSave = vscode.workspace.onDidSaveTextDocument((doc) => {
+  const onSave = vscode2.workspace.onDidSaveTextDocument((doc) => {
     if (isModelicaDocument(doc)) {
       if (previewPanel && currentDocumentUri?.fsPath === doc.uri.fsPath) {
         scheduleUpdate(doc.uri, context);
       }
     }
   });
-  const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
+  const onChange = vscode2.workspace.onDidChangeTextDocument((event) => {
     if (isModelicaDocument(event.document)) {
       if (previewPanel && currentDocumentUri?.fsPath === event.document.uri.fsPath) {
         scheduleUpdate(event.document.uri, context, event.document.getText());
       }
     }
   });
-  const onActiveEditorChange = vscode.window.onDidChangeActiveTextEditor((editor) => {
+  const onActiveEditorChange = vscode2.window.onDidChangeActiveTextEditor((editor) => {
     syncPreviewStatusBar(context, editor);
     if (!editor)
       return;
@@ -696,35 +879,35 @@ function activate(context) {
       }
     }
   });
-  syncPreviewStatusBar(context, vscode.window.activeTextEditor);
+  syncPreviewStatusBar(context, vscode2.window.activeTextEditor);
   context.subscriptions.push(showPreviewCmd, onSave, onChange, onActiveEditorChange);
 }
 function deactivate() {
   previewPanel?.dispose();
 }
 function showPreview(context) {
-  const editor = vscode.window.activeTextEditor;
+  const editor = vscode2.window.activeTextEditor;
   if (!editor) {
-    vscode.window.showWarningMessage("Open a Modelica (.mo) file first.");
+    vscode2.window.showWarningMessage("Open a Modelica (.mo) file first.");
     return;
   }
   if (!editor.document.fileName.endsWith(".mo") && editor.document.languageId !== "modelica") {
-    vscode.window.showWarningMessage("Active file is not a Modelica (.mo) file.");
+    vscode2.window.showWarningMessage("Active file is not a Modelica (.mo) file.");
     return;
   }
   currentDocumentUri = editor.document.uri;
   if (previewPanel) {
-    previewPanel.reveal(vscode.ViewColumn.Beside);
+    previewPanel.reveal(vscode2.ViewColumn.Beside);
   } else {
-    previewPanel = vscode.window.createWebviewPanel(
+    previewPanel = vscode2.window.createWebviewPanel(
       "modelicaPreview",
       "Modelica Preview",
-      vscode.ViewColumn.Beside,
+      vscode2.ViewColumn.Beside,
       {
         enableScripts: true,
         retainContextWhenHidden: true,
         localResourceRoots: [
-          vscode.Uri.file(path.join(context.extensionPath, "out"))
+          vscode2.Uri.file(path2.join(context.extensionPath, "out"))
         ]
       }
     );
@@ -748,17 +931,20 @@ function showPreview(context) {
 function scheduleUpdate(uri, context, content) {
   if (debounceTimer)
     clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => updatePreview(uri, content), 300);
+  debounceTimer = setTimeout(() => {
+    void updatePreview(uri, content);
+  }, 300);
 }
-function updatePreview(uri, content) {
+async function updatePreview(uri, content) {
   if (!previewPanel)
     return;
   previewPanel.webview.postMessage({ type: "loading" });
   try {
-    const text = content ?? fs.readFileSync(uri.fsPath, "utf8");
+    const text = content ?? fs2.readFileSync(uri.fsPath, "utf8");
     const diagramModel = parseModelicaFile(text, uri.fsPath);
-    previewPanel.title = `Preview: ${diagramModel.className}`;
-    previewPanel.webview.postMessage({ type: "update", model: diagramModel });
+    const enrichedModel = await workspaceModelResolver.enrichModelComponents(diagramModel, text);
+    previewPanel.title = `Preview: ${enrichedModel.className}`;
+    previewPanel.webview.postMessage({ type: "update", model: enrichedModel });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     previewPanel.webview.postMessage({ type: "error", error: `Parse error: ${msg}` });
@@ -766,18 +952,18 @@ function updatePreview(uri, content) {
 }
 async function navigateToComponent(docUri, line) {
   const lineIndex = Math.max(0, line - 1);
-  const doc = await vscode.workspace.openTextDocument(docUri);
-  const editor = await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
-  const range = new vscode.Range(lineIndex, 0, lineIndex, 0);
-  editor.selection = new vscode.Selection(range.start, range.start);
-  editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+  const doc = await vscode2.workspace.openTextDocument(docUri);
+  const editor = await vscode2.window.showTextDocument(doc, vscode2.ViewColumn.One);
+  const range = new vscode2.Range(lineIndex, 0, lineIndex, 0);
+  editor.selection = new vscode2.Selection(range.start, range.start);
+  editor.revealRange(range, vscode2.TextEditorRevealType.InCenter);
 }
 function buildWebviewHtml(webview, context) {
   const rendererUri = webview.asWebviewUri(
-    vscode.Uri.file(path.join(context.extensionPath, "out", "webview", "renderer.js"))
+    vscode2.Uri.file(path2.join(context.extensionPath, "out", "webview", "renderer.js"))
   );
-  const htmlPath = path.join(context.extensionPath, "out", "webview", "index.html");
-  let html = fs.readFileSync(htmlPath, "utf8");
+  const htmlPath = path2.join(context.extensionPath, "out", "webview", "index.html");
+  let html = fs2.readFileSync(htmlPath, "utf8");
   html = html.replace(/\{\{cspSource\}\}/g, webview.cspSource);
   html = html.replace(/\{\{rendererUri\}\}/g, rendererUri.toString());
   return html;

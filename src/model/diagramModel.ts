@@ -89,6 +89,10 @@ export interface DiagramComponent {
   transformation: Transformation;
   visible: boolean;
   sourceLine: number;
+  resolvedTypePath?: string;
+  resolvedIconGraphics?: Graphic[];
+  resolvedIconCoordinateSystem?: CoordinateSystem;
+  resolutionState?: 'resolved' | 'unresolved' | 'ambiguous';
 }
 
 export interface DiagramConnection {

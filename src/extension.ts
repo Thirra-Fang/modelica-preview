@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { parseModelicaFile } from './parser/modelicaParser';
 import { DiagramModel } from './model/diagramModel';
+import { WorkspaceModelResolver } from './workspace/modelResolver';
 
 // ── WebView panel management ───────────────────────────────────────────────
 
@@ -10,6 +11,7 @@ let previewPanel: vscode.WebviewPanel | undefined;
 let currentDocumentUri: vscode.Uri | undefined;
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 let previewStatusBar: vscode.StatusBarItem | undefined;
+const workspaceModelResolver = new WorkspaceModelResolver();
 
 function isModelicaDocument(doc: vscode.TextDocument): boolean {
   return doc.languageId === 'modelica' || doc.fileName.endsWith('.mo');
@@ -139,10 +141,12 @@ function scheduleUpdate(
   content?: string
 ): void {
   if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => updatePreview(uri, content), 300);
+  debounceTimer = setTimeout(() => {
+    void updatePreview(uri, content);
+  }, 300);
 }
 
-function updatePreview(uri: vscode.Uri, content?: string): void {
+async function updatePreview(uri: vscode.Uri, content?: string): Promise<void> {
   if (!previewPanel) return;
 
   previewPanel.webview.postMessage({ type: 'loading' });
@@ -150,11 +154,12 @@ function updatePreview(uri: vscode.Uri, content?: string): void {
   try {
     const text = content ?? fs.readFileSync(uri.fsPath, 'utf8');
     const diagramModel: DiagramModel = parseModelicaFile(text, uri.fsPath);
+    const enrichedModel: DiagramModel = await workspaceModelResolver.enrichModelComponents(diagramModel, text);
 
     // Update panel title
-    previewPanel.title = `Preview: ${diagramModel.className}`;
+    previewPanel.title = `Preview: ${enrichedModel.className}`;
 
-    previewPanel.webview.postMessage({ type: 'update', model: diagramModel });
+    previewPanel.webview.postMessage({ type: 'update', model: enrichedModel });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     previewPanel.webview.postMessage({ type: 'error', error: `Parse error: ${msg}` });

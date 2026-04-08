@@ -571,6 +571,137 @@ function renderGraphic(g: Graphic, vb: ViewBox, svgW: number, svgH: number, defs
 
 // ── Component renderer ─────────────────────────────────────────────────────
 
+function mapIconPointToComponent(
+  p: Point,
+  iconExtent: Extent,
+  componentExtent: Extent
+): Point {
+  const [[ix1, iy1], [ix2, iy2]] = iconExtent;
+  const [[cx1, cy1], [cx2, cy2]] = componentExtent;
+  const iconW = ix2 - ix1 || 1;
+  const iconH = iy2 - iy1 || 1;
+  const tx = (p[0] - ix1) / iconW;
+  const ty = (p[1] - iy1) / iconH;
+  return [cx1 + tx * (cx2 - cx1), cy1 + ty * (cy2 - cy1)];
+}
+
+/**
+ * Map an Icon-layer graphic into parent diagram coordinates inside the component's
+ * Placement extent. Must mirror renderLine/renderRectangle/...: primitives use
+ * local points + origin (and rotation). Mapping extent and origin separately then
+ * letting the renderer add them breaks affine composition (see debug H-A).
+ */
+function mapIconGraphicToComponent(
+  graphic: Graphic,
+  iconExtent: Extent,
+  componentExtent: Extent
+): Graphic {
+  const mapP = (p: Point) => mapIconPointToComponent(p, iconExtent, componentExtent);
+
+  if (graphic.type === 'Line') {
+    const points = graphic.points.map((p) =>
+      mapP(localToAbsolute(p, graphic.origin, graphic.rotation))
+    );
+    return { ...graphic, points, origin: [0, 0], rotation: 0 };
+  }
+
+  if (graphic.type === 'Polygon') {
+    const points = graphic.points.map((p) =>
+      mapP(localToAbsolute(p, graphic.origin, graphic.rotation))
+    );
+    return { ...graphic, points, origin: [0, 0], rotation: 0 };
+  }
+
+  if (graphic.type === 'Rectangle') {
+    if (graphic.rotation !== 0) {
+      const corners: Point[] = [
+        [graphic.extent[0][0], graphic.extent[0][1]],
+        [graphic.extent[1][0], graphic.extent[0][1]],
+        [graphic.extent[1][0], graphic.extent[1][1]],
+        [graphic.extent[0][0], graphic.extent[1][1]],
+      ];
+      const mapped = corners.map((c) => mapP(localToAbsolute(c, graphic.origin, graphic.rotation)));
+      return {
+        type: 'Polygon',
+        visible: graphic.visible,
+        origin: [0, 0],
+        rotation: 0,
+        lineColor: graphic.lineColor,
+        fillColor: graphic.fillColor,
+        pattern: graphic.pattern,
+        fillPattern: graphic.fillPattern,
+        lineThickness: graphic.lineThickness,
+        points: mapped,
+        smooth: 'None',
+      };
+    }
+    const a0: Point = [
+      graphic.extent[0][0] + graphic.origin[0],
+      graphic.extent[0][1] + graphic.origin[1],
+    ];
+    const a1: Point = [
+      graphic.extent[1][0] + graphic.origin[0],
+      graphic.extent[1][1] + graphic.origin[1],
+    ];
+    return {
+      ...graphic,
+      extent: [mapP(a0), mapP(a1)],
+      origin: [0, 0],
+      rotation: 0,
+    };
+  }
+
+  if (graphic.type === 'Ellipse') {
+    const abs0: Point = [
+      graphic.extent[0][0] + graphic.origin[0],
+      graphic.extent[0][1] + graphic.origin[1],
+    ];
+    const abs1: Point = [
+      graphic.extent[1][0] + graphic.origin[0],
+      graphic.extent[1][1] + graphic.origin[1],
+    ];
+    const m0 = mapP(abs0);
+    const m1 = mapP(abs1);
+    const pivot = mapP(graphic.origin);
+    if (graphic.rotation !== 0) {
+      return {
+        ...graphic,
+        extent: [
+          [m0[0] - pivot[0], m0[1] - pivot[1]],
+          [m1[0] - pivot[0], m1[1] - pivot[1]],
+        ],
+        origin: pivot,
+        rotation: graphic.rotation,
+      };
+    }
+    return {
+      ...graphic,
+      extent: [m0, m1],
+      origin: [0, 0],
+      rotation: 0,
+    };
+  }
+
+  if (graphic.type === 'Text' || graphic.type === 'Bitmap') {
+    const abs0: Point = [
+      graphic.extent[0][0] + graphic.origin[0],
+      graphic.extent[0][1] + graphic.origin[1],
+    ];
+    const abs1: Point = [
+      graphic.extent[1][0] + graphic.origin[0],
+      graphic.extent[1][1] + graphic.origin[1],
+    ];
+    return {
+      ...graphic,
+      extent: [mapP(abs0), mapP(abs1)],
+      origin: [0, 0],
+      rotation: 0,
+    };
+  }
+
+  return graphic;
+}
+
 function renderComponent(
   comp: DiagramComponent,
   vb: ViewBox, svgW: number, svgH: number,
@@ -596,13 +727,26 @@ function renderComponent(
     cursor: 'pointer',
   });
 
-  // Box background
-  const rect = el('rect', {
-    x, y, width: w, height: h, rx: 4, ry: 4,
-    fill: '#e8f4fd',
-    stroke: '#2196f3',
-    'stroke-width': Math.max(1, w * 0.02),
-  });
+  let rect: SVGRectElement | null = null;
+  const iconExtent = comp.resolvedIconCoordinateSystem?.extent ?? [[-100, -100], [100, 100]];
+  const hasResolvedIcon = !!comp.resolvedIconGraphics && comp.resolvedIconGraphics.length > 0;
+
+  if (hasResolvedIcon) {
+    const componentExtent: Extent = [[ox_mo + ex1, oy_mo + ey1], [ox_mo + ex2, oy_mo + ey2]];
+    for (const iconGraphic of comp.resolvedIconGraphics!) {
+      if (iconGraphic.visible === false) continue;
+      const mapped = mapIconGraphicToComponent(iconGraphic, iconExtent, componentExtent);
+      grp.appendChild(renderGraphic(mapped, vb, svgW, svgH, defs));
+    }
+  } else {
+    rect = el('rect', {
+      x, y, width: w, height: h, rx: 4, ry: 4,
+      fill: '#e8f4fd',
+      stroke: '#2196f3',
+      'stroke-width': Math.max(1, w * 0.02),
+    });
+    grp.appendChild(rect);
+  }
 
   // Short type name label (last segment of dotted path)
   const shortType = comp.typeName.includes('.')
@@ -638,7 +782,6 @@ function renderComponent(
   });
   (highlight as SVGElement).style.opacity = '0';
 
-  grp.appendChild(rect);
   grp.appendChild(typeLabel);
   grp.appendChild(nameLabel);
   grp.appendChild(highlight);
@@ -656,11 +799,15 @@ function renderComponent(
   });
   grp.addEventListener('mouseenter', () => {
     (highlight as SVGElement).style.opacity = '1';
-    (rect as SVGElement).style.stroke = '#1565c0';
+    if (rect) {
+      (rect as SVGElement).style.stroke = '#1565c0';
+    }
   });
   grp.addEventListener('mouseleave', () => {
     (highlight as SVGElement).style.opacity = '0';
-    (rect as SVGElement).style.stroke = '#2196f3';
+    if (rect) {
+      (rect as SVGElement).style.stroke = '#2196f3';
+    }
   });
 
   return grp;

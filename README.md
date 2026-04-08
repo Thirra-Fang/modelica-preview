@@ -4,7 +4,10 @@
 
 在 Visual Studio Code 中打开 **Modelica（`.mo`）** 文件时，根据源码里的 **`annotation`**（如 `Placement`、`connect` 的 `Line`、类级别的 `Diagram` / `Icon` 等）渲染**示意图预览**，便于对照图形与文本。
 
-**扩展市场：** [Visual Studio Marketplace — Modelica Graphical Preview](https://marketplace.visualstudio.com/items?itemName=ThirraFang.modelica-preview)
+**扩展市场：**
+
+- [Visual Studio Marketplace — Modelica Graphical Preview](https://marketplace.visualstudio.com/items?itemName=ThirraFang.modelica-preview)（官方 **Visual Studio Code** 默认市场）
+- [Open VSX — Modelica Graphical Preview](https://open-vsx.org/extension/ThirraFang/modelica-preview)（**Cursor**、**VSCodium** 等常用）
 
 **仓库：** [github.com/Thirra-Fang/modelica-preview](https://github.com/Thirra-Fang/modelica-preview)
 
@@ -27,7 +30,7 @@
 1. 在 VS Code 中打开 **扩展** 视图（`Ctrl+Shift+X` / `Cmd+Shift+X`）。
 2. 搜索 **Modelica Graphical Preview** 或 **modelica-preview**，选择发布者 **ThirraFang** 的条目，点击 **安装**。
 
-也可在浏览器中打开 [Marketplace 页面](https://marketplace.visualstudio.com/items?itemName=ThirraFang.modelica-preview)，点击 **Install** 跳转到 VS Code / VS Code 兼容编辑器完成安装。
+也可在浏览器中打开 [Visual Studio Marketplace 页面](https://marketplace.visualstudio.com/items?itemName=ThirraFang.modelica-preview) 或 [Open VSX 页面](https://open-vsx.org/extension/ThirraFang/modelica-preview)，按页面提示在对应编辑器中安装。
 
 ### 从 VSIX 安装
 
@@ -88,7 +91,10 @@ npm run package    # 生产构建并执行 vsce package，生成 .vsix
 
 When you open **Modelica (`.mo`)** files in Visual Studio Code, this extension renders a **diagram-style preview** from **`annotation`** data in the source—such as `Placement`, `Line` on `connect` statements, and class-level `Diagram` / `Icon` annotations—so you can compare the drawing with the text.
 
-**Marketplace:** [Visual Studio Marketplace — Modelica Graphical Preview](https://marketplace.visualstudio.com/items?itemName=ThirraFang.modelica-preview)
+**Marketplaces:**
+
+- [Visual Studio Marketplace — Modelica Graphical Preview](https://marketplace.visualstudio.com/items?itemName=ThirraFang.modelica-preview) (default for official **Visual Studio Code**)
+- [Open VSX — Modelica Graphical Preview](https://open-vsx.org/extension/ThirraFang/modelica-preview) (common for **Cursor**, **VSCodium**, and similar)
 
 **Repository:** [github.com/Thirra-Fang/modelica-preview](https://github.com/Thirra-Fang/modelica-preview)
 
@@ -111,7 +117,7 @@ When you open **Modelica (`.mo`)** files in Visual Studio Code, this extension r
 1. Open the **Extensions** view in VS Code (`Ctrl+Shift+X` / `Cmd+Shift+X`).
 2. Search for **Modelica Graphical Preview** or **modelica-preview**, choose the listing published by **ThirraFang**, and click **Install**.
 
-You can also open the [Marketplace page](https://marketplace.visualstudio.com/items?itemName=ThirraFang.modelica-preview) in a browser and use **Install** to jump into VS Code or a compatible editor.
+You can also open the [Visual Studio Marketplace page](https://marketplace.visualstudio.com/items?itemName=ThirraFang.modelica-preview) or the [Open VSX page](https://open-vsx.org/extension/ThirraFang/modelica-preview) in a browser and follow the install flow for your editor.
 
 ### Install from VSIX
 

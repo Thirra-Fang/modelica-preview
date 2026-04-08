@@ -9,3 +9,4 @@ esbuild.js
 .gitignore
 media/**
 resources/**
+publish-both-stores.bat

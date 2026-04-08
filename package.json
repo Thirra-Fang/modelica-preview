@@ -2,7 +2,7 @@
   "name": "modelica-preview",
   "displayName": "Modelica Graphical Preview",
   "description": "Graphical diagram preview for Modelica .mo files",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "license": "MIT",
   "publisher": "ThirraFang",
   "repository": {

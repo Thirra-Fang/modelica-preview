@@ -20,6 +20,7 @@
     "Visualization",
     "Programming Languages"
   ],
+  "icon": "assets/modelica-preview-icon.png",
   "main": "./out/extension.js",
   "contributes": {
     "commands": [

@@ -77,7 +77,7 @@ flowchart LR
 npm install
 npm run compile    # 生成 out/（含复制 index.html）
 npm run watch      # 监听 src 变更
-npm run package    # production 构建 + vsce 打 VSIX
+npm run package    # production 构建 + vsce 打 VSIX（输出到 artifacts/vsix/）
 ```
 
 - **F5**：先执行默认 build，再在 Extension Development Host 中加载本扩展。

@@ -34,7 +34,7 @@
 
 ### 从 VSIX 安装
 
-若已打包得到 `modelica-preview-*.vsix`（例如自行构建或离线分发）：
+若已打包得到 `artifacts/vsix/modelica-preview-*.vsix`（例如自行构建或离线分发）：
 
 1. 在 VS Code 中选择 **扩展** → 右上角 `⋯` → **从 VSIX 安装…**
 2. 选中该 `.vsix` 文件并安装。
@@ -60,7 +60,7 @@
 npm install
 npm run compile    # 构建到 out/
 npm run watch      # 监听修改并持续构建
-npm run package    # 生产构建并执行 vsce package，生成 .vsix
+npm run package    # 生产构建并执行 vsce package，输出到 artifacts/vsix/
 ```
 
 使用 **F5**（“Run Extension”）可在 Extension Development Host 中调试本扩展。
@@ -123,7 +123,7 @@ You can also open the [Visual Studio Marketplace page](https://marketplace.visua
 
 ### Install from VSIX
 
-If you have a `modelica-preview-*.vsix` file (e.g. from a local build or offline distribution):
+If you have an `artifacts/vsix/modelica-preview-*.vsix` file (e.g. from a local build or offline distribution):
 
 1. In VS Code: **Extensions** → `⋯` in the top-right → **Install from VSIX…**
 2. Select the `.vsix` file and install.
@@ -149,7 +149,7 @@ If you want to avoid opening source text inside the preview column when clicking
 npm install
 npm run compile    # build to out/
 npm run watch      # watch and rebuild
-npm run package    # production build + vsce package → .vsix
+npm run package    # production build + vsce package → artifacts/vsix/
 ```
 
 Press **F5** (“Run Extension”) to debug in an Extension Development Host.

@@ -65,7 +65,7 @@
   "scripts": {
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
-    "package": "node esbuild.js --production && npx vsce package",
+    "package": "node scripts/package-vsix.js",
     "vscode:prepublish": "node esbuild.js --production"
   },
   "devDependencies": {

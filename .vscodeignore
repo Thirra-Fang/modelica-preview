@@ -10,3 +10,5 @@ esbuild.js
 media/**
 resources/**
 publish-both-stores.bat
+artifacts/**
+scripts/**

@@ -54,6 +54,9 @@ interface ViewBox {
   x1: number; y1: number; x2: number; y2: number;
   width: number; height: number;
 }
+interface Bounds {
+  x1: number; y1: number; x2: number; y2: number;
+}
 
 function makeViewBox(cs: CoordinateSystem): ViewBox {
   const [[x1, y1], [x2, y2]] = cs.extent;
@@ -88,6 +91,121 @@ function localToAbsolute(p: Point, origin: Point, rotDeg: number): Point {
     origin[0] + p[0] * cosR - p[1] * sinR,
     origin[1] + p[0] * sinR + p[1] * cosR,
   ];
+}
+
+function absoluteToLocal(p: Point, origin: Point, rotDeg: number): Point {
+  if (rotDeg === 0) return [p[0] - origin[0], p[1] - origin[1]];
+  const dx = p[0] - origin[0];
+  const dy = p[1] - origin[1];
+  const r = -rotDeg * Math.PI / 180;
+  const cosR = Math.cos(r);
+  const sinR = Math.sin(r);
+  return [
+    dx * cosR - dy * sinR,
+    dx * sinR + dy * cosR,
+  ];
+}
+
+function componentBounds(comp: DiagramComponent): Bounds {
+  const { transformation: t } = comp;
+  const [[ex1, ey1], [ex2, ey2]] = t.extent;
+  const corners: Point[] = [[ex1, ey1], [ex2, ey1], [ex2, ey2], [ex1, ey2]];
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const c of corners) {
+    const [ax, ay] = localToAbsolute(c, t.origin, t.rotation);
+    if (ax < minX) minX = ax;
+    if (ax > maxX) maxX = ax;
+    if (ay < minY) minY = ay;
+    if (ay > maxY) maxY = ay;
+  }
+  return { x1: minX, y1: minY, x2: maxX, y2: maxY };
+}
+
+function pointNearBounds(p: Point, b: Bounds, tol = 1.5): boolean {
+  return p[0] >= b.x1 - tol && p[0] <= b.x2 + tol && p[1] >= b.y1 - tol && p[1] <= b.y2 + tol;
+}
+
+function nearestEdgeMidpoint(b: Bounds, toward: Point): Point {
+  const mids: Point[] = [
+    [b.x1, (b.y1 + b.y2) / 2],
+    [b.x2, (b.y1 + b.y2) / 2],
+    [(b.x1 + b.x2) / 2, b.y1],
+    [(b.x1 + b.x2) / 2, b.y2],
+  ];
+  let best = mids[0];
+  let bestD2 = (toward[0] - best[0]) ** 2 + (toward[1] - best[1]) ** 2;
+  for (let i = 1; i < mids.length; i++) {
+    const p = mids[i];
+    const d2 = (toward[0] - p[0]) ** 2 + (toward[1] - p[1]) ** 2;
+    if (d2 < bestD2) {
+      best = p;
+      bestD2 = d2;
+    }
+  }
+  return best;
+}
+
+function orthogonalStub(from: Point, to: Point): Point[] {
+  const mid1: Point = [to[0], from[1]];
+  const mid2: Point = [from[0], to[1]];
+  const len1 = Math.abs(mid1[0] - from[0]) + Math.abs(mid1[1] - from[1]) + Math.abs(to[0] - mid1[0]) + Math.abs(to[1] - mid1[1]);
+  const len2 = Math.abs(mid2[0] - from[0]) + Math.abs(mid2[1] - from[1]) + Math.abs(to[0] - mid2[0]) + Math.abs(to[1] - mid2[1]);
+  if (len1 <= len2) return [from, mid1, to];
+  return [from, mid2, to];
+}
+
+function adjustConnectionForComponents(conn: DiagramConnection, components: DiagramComponent[]): DiagramConnection {
+  if (conn.line.points.length === 0) return conn;
+  const absPoints = conn.line.points.map((p) => localToAbsolute(p, conn.line.origin, conn.line.rotation));
+  const fromCompName = conn.from.split('.')[0];
+  const toCompName = conn.to.split('.')[0];
+  const fromComp = components.find((c) => c.name === fromCompName);
+  const toComp = components.find((c) => c.name === toCompName);
+
+  let snappedStart = false;
+  let snappedEnd = false;
+
+  if (fromComp && absPoints.length >= 1) {
+    const b = componentBounds(fromComp);
+    if (!pointNearBounds(absPoints[0], b)) {
+      snappedStart = true;
+    }
+  }
+  if (toComp && absPoints.length >= 1) {
+    const b = componentBounds(toComp);
+    const last = absPoints.length - 1;
+    if (!pointNearBounds(absPoints[last], b)) {
+      snappedEnd = true;
+    }
+  }
+
+  if (snappedStart) {
+    const oldStart = absPoints[0];
+    const targetStart = fromComp
+      ? nearestEdgeMidpoint(componentBounds(fromComp), absPoints[1] ?? oldStart)
+      : oldStart;
+    const stub = orthogonalStub(targetStart, oldStart);
+    absPoints.splice(0, 1, ...stub);
+  }
+  if (snappedEnd) {
+    const oldEnd = absPoints[absPoints.length - 1];
+    const targetEnd = toComp
+      ? nearestEdgeMidpoint(componentBounds(toComp), absPoints[absPoints.length - 2] ?? oldEnd)
+      : oldEnd;
+    const stub = orthogonalStub(oldEnd, targetEnd);
+    absPoints.splice(absPoints.length - 1, 1, ...stub);
+  }
+
+  if (!snappedStart && !snappedEnd) return conn;
+  return {
+    ...conn,
+    line: {
+      ...conn.line,
+      origin: [0, 0],
+      rotation: 0,
+      points: absPoints.map((p) => absoluteToLocal(p, [0, 0], 0)),
+    },
+  };
 }
 
 /**
@@ -719,7 +837,6 @@ function renderComponent(
   const y = Math.min(p1y, p2y);
   const w = Math.abs(p2x - p1x);
   const h = Math.abs(p2y - p1y);
-
   const grp = group({
     class: 'mo-component',
     'data-name': comp.name,
@@ -822,7 +939,6 @@ function renderConnection(conn: DiagramConnection, vb: ViewBox, svgW: number, sv
     // No explicit points: skip (can't draw without waypoints)
     return grp;
   }
-
   const lineEl = renderLine(conn.line, vb, svgW, svgH, defs);
 
   // Tooltip
@@ -916,7 +1032,7 @@ function render(m: DiagramModel): void {
     // ── Connections ──
     const connectionLayer = group({ class: 'mo-connection-layer' });
     for (const conn of m.connections) {
-      connectionLayer.appendChild(renderConnection(conn, vb, svgW, svgH, defs));
+      connectionLayer.appendChild(renderConnection(adjustConnectionForComponents(conn, m.components), vb, svgW, svgH, defs));
     }
     root.appendChild(connectionLayer);
   }

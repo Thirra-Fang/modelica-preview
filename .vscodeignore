@@ -12,3 +12,4 @@ resources/**
 publish-both-stores.bat
 artifacts/**
 scripts/**
+examples/**

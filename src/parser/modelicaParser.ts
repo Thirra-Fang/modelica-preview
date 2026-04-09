@@ -85,10 +85,11 @@ function findAnnotations(src: string): RawAnnotation[] {
     const closePos = findBalancedClose(src, openParen);
     const content = src.slice(openParen + 1, closePos);
 
-    // Grab preceding text (current statement context: back to last ';' or start of line group)
+    // Grab preceding text for current statement context: back to last ';'.
+    // Do not stop at '{' / '}' because Modelica modification records frequently
+    // contain braces (e.g. table={{...}}), which would truncate component prefixes.
     let prefixStart = openParen;
-    // Walk backward past whitespace and the word 'annotation'
-    while (prefixStart > 0 && src[prefixStart - 1] !== ';' && src[prefixStart - 1] !== '{' && src[prefixStart - 1] !== '}') {
+    while (prefixStart > 0 && src[prefixStart - 1] !== ';') {
       prefixStart--;
     }
     const statementPrefix = src.slice(prefixStart, m.index).trim();
@@ -348,19 +349,62 @@ function extractTransformation(v: AnnotationValue | undefined): model.Transforma
  *   `  TypePath instanceName(modifications)`
  */
 function inferComponentFromPrefix(prefix: string): { typeName: string; name: string } | null {
+  function stripTrailingModificationList(input: string): string {
+    const s = input.trim();
+    if (!s.endsWith(')')) return s;
+    let depth = 0;
+    let inString = false;
+    for (let i = s.length - 1; i >= 0; i--) {
+      const ch = s[i];
+      if (inString) {
+        if (ch === '"' && s[i - 1] !== '\\') inString = false;
+        continue;
+      }
+      if (ch === '"') {
+        inString = true;
+        continue;
+      }
+      if (ch === ')') {
+        depth++;
+        continue;
+      }
+      if (ch === '(') {
+        depth--;
+        if (depth === 0) {
+          return s.slice(0, i).trim();
+        }
+      }
+    }
+    return s;
+  }
+  function stripTrailingDescriptionString(input: string): string {
+    const s = input.trim();
+    if (!s.endsWith('"')) return s;
+    let i = s.length - 2;
+    while (i >= 0) {
+      if (s[i] === '"' && s[i - 1] !== '\\') {
+        return s.slice(0, i).trim();
+      }
+      i--;
+    }
+    return s;
+  }
+
   // Normalise whitespace
-  const clean = prefix.replace(/\s+/g, ' ').trim();
-  // Strip trailing modification list (parens) — handles simple modifications without nested parens
-  const noMod = clean.replace(/\([^)]*\)\s*$/, '').trim();
+  const clean = stripTrailingDescriptionString(prefix.replace(/\s+/g, ' ').trim());
+  // Strip trailing modification list, including nested parentheses in modifications.
+  const noMod = stripTrailingModificationList(clean);
   // Split by whitespace — last token is the instance name, second-to-last is the type (or dotted type)
   const parts = noMod.split(/\s+/);
   if (parts.length < 2) return null;
   const name = parts[parts.length - 1];
   const typeName = parts[parts.length - 2];
   // Sanity check: instance name must be a plain identifier
-  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) return null;
+  const nameOk = /^[A-Za-z_][A-Za-z0-9_]*(\[[^\]]+\])*$/.test(name);
+  if (!nameOk) return null;
   // Type name may start with '.' for absolute Modelica package paths (e.g. .IBT.Foo.Bar)
-  if (!/^\.?[A-Za-z_][A-Za-z0-9_.]*$/.test(typeName)) return null;
+  const typeOk = /^\.?[A-Za-z_][A-Za-z0-9_.]*$/.test(typeName);
+  if (!typeOk) return null;
   return { typeName, name };
 }
 

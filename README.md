@@ -50,6 +50,8 @@
 
 预览默认在侧边栏打开；可像普通编辑器标签一样移动或关闭。
 
+若希望“点击新 `.mo` 文件时，不在预览分栏里打开文本代码”，可将预览所在分栏设为 **Lock Group（锁定分栏）**：在该分栏右上角菜单中启用锁定后，新打开的 `.mo` 会在其他分栏以文本模式打开，而此分栏会继续保留并显示 Modelica Preview（并随当前活动 `.mo` 自动切换内容）。
+
 **提示：** 标题栏能摆下的按钮数量受窗口宽度、主题以及已安装扩展影响；若预览图标总进 **`⋯`**，可优先用状态栏或快捷键。也可在设置中搜索 **Editor Actions Position**（`workbench.editor.editorActionsLocation`）调整编辑器操作按钮的位置，观察哪种布局下更容易看到标题栏图标。
 
 ## 开发与打包
@@ -136,6 +138,8 @@ If you have a `modelica-preview-*.vsix` file (e.g. from a local build or offline
    - Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run **`Modelica: Show Diagram Preview`**.
 
 The preview opens beside the editor by default; you can move or close it like a normal tab.
+
+If you want to avoid opening source text inside the preview column when clicking another `.mo` file, set the preview column to **Lock Group** (from the group menu in the top-right corner). With the group locked, newly opened `.mo` files go to another editor group in text mode, while this group keeps showing Modelica Preview and continues following the active `.mo` file.
 
 **Tip:** How many actions fit in the title bar depends on window width, theme, and other extensions. If the preview icon keeps landing under **`⋯`**, prefer the status bar or shortcut. You can also search settings for **Editor Actions Position** (`workbench.editor.editorActionsLocation`) and try different placements to see which layout surfaces title-bar actions more often.
 

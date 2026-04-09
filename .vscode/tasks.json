@@ -18,7 +18,7 @@
     {
       "label": "Publish both stores",
       "type": "shell",
-      "command": "./publish-both-stores.bat",
+      "command": ".\\publish-both-stores.bat",
       "options": {
         "cwd": "${workspaceFolder}"
       },
